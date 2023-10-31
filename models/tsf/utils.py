@@ -40,10 +40,7 @@ def extract_imu_tensor_func_oppotunity(in_x, version=1):
         tags.append(np.array(l))
         sensor_location += 1
 
-    if version == 1:
-        return x_except_imu, x_tags_except_imu, x_imu, tags
-    elif version >= 2:
-        return x_except_imu, x_tags_except_imu, [x_imu[0:5], x_imu[5:7]], [tags[0:5], tags[5:7]]
+    return x_except_imu, x_tags_except_imu, [x_imu[0:5], x_imu[5:7]], [tags[0:5], tags[5:7]]
 
 
 def extract_imu_tensor_func_oppotunity_task_c(in_x, version=1):
@@ -66,10 +63,7 @@ def extract_imu_tensor_func_oppotunity_task_c(in_x, version=1):
         tags.append(np.array(l))
         sensor_location += 1
 
-    if version == 1:
-        return None, None, x_imu, tags
-    elif version >= 2:
-        return None, None, [x_imu], [tags]
+    return None, None, [x_imu], [tags]
 
 
 
@@ -91,10 +85,7 @@ def extract_imu_tensor_func_pamap2(in_x, version=1):
         tags.append(np.array(l))
         sensor_location += 1
                 
-    if version == 1:
-        return None, None, x_imu, tags
-    elif version >= 2:
-        return None, None, [x_imu], [tags]
+    return None, None, [x_imu], [tags]
 
 
 def extract_imu_tensor_func_ucihar(in_x, version=1):
@@ -107,10 +98,7 @@ def extract_imu_tensor_func_ucihar(in_x, version=1):
 
     tags = [np.array(tags)]
 
-    if version == 1:
-        return None, None, x_imu, tags
-    elif version >= 2:
-        return None, None, [x_imu], [tags]
+    return None, None, [x_imu], [tags]
 
 
 def extract_imu_tensor_func_daphnet(in_x, version=1):
@@ -126,10 +114,7 @@ def extract_imu_tensor_func_daphnet(in_x, version=1):
         tags.append(np.array([[sensor_location, Tag.ACC, axis] for axis in Tag.XYZ]))
         sensor_location += 1
 
-    if version == 1:
-        return None, None, x_imu, tags
-    elif version >= 2:
-        return None, None, [x_imu], [tags]
+    return None, None, [x_imu], [tags]
 
 
 def extract_imu_tensor_func_wisdm(in_x, version=1):
@@ -138,10 +123,7 @@ def extract_imu_tensor_func_wisdm(in_x, version=1):
     x_imu.append(in_x[:,:,0:3])
     tags.append(np.array([[1, Tag.ACC, axis] for axis in Tag.XYZ]))
 
-    if version == 1:
-        return None, None, x_imu, tags
-    elif version >= 2:
-        return None, None, [x_imu], [tags]
+    return None, None, [x_imu], [tags]
 
 
 class Tag:

@@ -44,18 +44,6 @@ def r_tsf_net(x_shape,
            rot_tsf_mixer_for_imu_base_kn=32,
            no_rms = False,
            no_rms_for_rot = False,
-           imu_weighting_depth=1,
-           imu_weighting_base_kn=256,
-           imu_weighting_tsf_mixer_depth=3,
-           imu_weighting_tsf_mixer_base_kn=64,
-           imu_weighting_block_mixer_depth=3,
-           imu_weighting_block_mixer_base_kn=64,
-           tsf_weighting_depth=1,
-           tsf_weighting_base_kn=256,
-           tsf_weighting_tsf_mixer_depth=3,
-           tsf_weighting_tsf_mixer_base_kn=64,
-           tsf_weighting_block_mixer_depth=3,
-           tsf_weighting_block_mixer_base_kn=64,
            ax_weight_depth=1,
            ax_weight_base_kn=256,
            tsf_weight_depth=1,
@@ -125,8 +113,35 @@ def r_tsf_net(x_shape,
     tags = []
 
     if imu_rot_num > 0:
-        if version == 1: 
-            for _x_imu, _x_tags in zip(x_imu, x_tags):
+        for _x_imu_list, _x_tags_list in zip(x_imu, x_tags):
+            mh3dr = Multihead3dRotation(head_nums=imu_rot_num, 
+                                        depth=rot_depth,
+                                        base_kn=rot_base_kn,
+                                        dropout_rate=dropout_rate,
+                                        tsf_mixer_depth = rot_tsf_mixer_depth,
+                                        tsf_mixer_base_kn = rot_tsf_mixer_base_kn,
+                                        block_mixer_depth = rot_block_mixer_depth,
+                                        block_mixer_base_kn = rot_block_mixer_base_kn,
+                                        normalizer = rot_normalizer,
+                                        activation_func = activation_func,
+                                        tsf_block_sizes= rot_tsf_block_sizes,
+                                        tsf_block_strides = rot_tsf_block_strides,
+                                        tsf_block_ext_tsf_params=rot_tsf_block_ext_tsf_params,
+                                        ax_weight_depth = rot_ax_weight_depth,
+                                        ax_weight_base_kn = rot_ax_weight_base_kn,
+                                        tsf_weight_depth = rot_tsf_weight_depth,
+                                        tsf_weight_base_kn = rot_tsf_weight_base_kn,
+                                        few_norm=few_norm,
+                                        few_acti=few_acti,
+                                        tagging = tagging,
+                                        parallel_n = rot_parallel_n,
+                                        rot_out_num= rot_out_num,
+                                        version=version,
+                                        concatenate_blocks_with_same_size_and_stride = concatenate_blocks_with_same_size_and_stride,
+                                        use_add_for_blk_concatenate = use_add_for_blk_concatenate,
+                                        )
+
+            for _x_imu, _x_tags in zip(_x_imu_list, _x_tags_list):
                 if _x_imu.shape[2] % 3 != 0:
                     raise ValueError(f"{_x_imu.shape[2] % 3 =} should be 0: {_x_imu.shape=}")
 
@@ -141,29 +156,6 @@ def r_tsf_net(x_shape,
                 imu_rms_tags.append(_rms_tag)
 
                 if imu_rot_num > 0:
-                    mh3dr = Multihead3dRotation(head_nums=imu_rot_num, 
-                                                depth=rot_depth,
-                                                base_kn=rot_base_kn,
-                                                dropout_rate=dropout_rate,
-                                                tsf_mixer_depth = rot_tsf_mixer_depth,
-                                                tsf_mixer_base_kn = rot_tsf_mixer_base_kn,
-                                                block_mixer_depth = rot_block_mixer_depth,
-                                                block_mixer_base_kn = rot_block_mixer_base_kn,
-                                                normalizer = rot_normalizer,
-                                                activation_func = activation_func,
-                                                tsf_block_sizes= rot_tsf_block_sizes,
-                                                tsf_block_strides = rot_tsf_block_strides,
-                                                tsf_block_ext_tsf_params=rot_tsf_block_ext_tsf_params,
-                                                few_norm=few_norm,
-                                                few_acti=few_acti,
-                                                tagging = tagging,
-                                                parallel_n = rot_parallel_n,
-                                                rot_out_num = rot_out_num,
-                                                concatenate_blocks_with_same_size_and_stride = concatenate_blocks_with_same_size_and_stride,
-                                                use_add_for_blk_concatenate = use_add_for_blk_concatenate,
-                                                btm_head_num = btm_head_num,
-                                                btm_no_out_activation = btm_no_out_activation,
-                                                )
 
                     extended_imu = mh3dr([_x_imu,  None if no_rms_for_rot else _rms], 
                                          [_x_tags, None if no_rms_for_rot else _rms_tag])
@@ -171,80 +163,6 @@ def r_tsf_net(x_shape,
 
                     for _ in range(len(extended_imu)):
                         tags.append(_x_tags)
-
-                    #imu_rotted.extend(mh_3d_rot(_x_imu, 
-                    #                  x_tags = _x_tags,
-                    #                  extra_x = None if no_rms_for_rot else _rms, 
-                    #                  extra_x_tags = None if no_rms_for_rot else _rms_tag, 
-                    #                  head_nums=imu_rot_num, 
-                    #                  depth=rot_depth,
-                    #                  base_kn=rot_base_kn,
-                    #                  dropout_rate=dropout_rate,
-                    #                  tsf_mixer_depth = rot_tsf_mixer_depth,
-                    #                  tsf_mixer_base_kn = rot_tsf_mixer_base_kn,
-                    #                  block_mixer_depth = rot_block_mixer_depth,
-                    #                  block_mixer_base_kn = rot_block_mixer_base_kn,
-                    #                  normalizer = rot_normalizer,
-                    #                  activation_func = activation_func,
-                    #                  tsf_block_sizes= rot_tsf_block_sizes,
-                    #                  tsf_block_strides = rot_tsf_block_strides,
-                    #                  tsf_block_ext_tsf_params=rot_tsf_block_ext_tsf_params,
-                    #                  few_norm=few_norm,
-                    #                  few_acti=few_acti,
-                    #                  tagging = tagging,
-                    #                  ))
-        elif version >= 2:
-
-            for _x_imu_list, _x_tags_list in zip(x_imu, x_tags):
-                mh3dr = Multihead3dRotation(head_nums=imu_rot_num, 
-                                            depth=rot_depth,
-                                            base_kn=rot_base_kn,
-                                            dropout_rate=dropout_rate,
-                                            tsf_mixer_depth = rot_tsf_mixer_depth,
-                                            tsf_mixer_base_kn = rot_tsf_mixer_base_kn,
-                                            block_mixer_depth = rot_block_mixer_depth,
-                                            block_mixer_base_kn = rot_block_mixer_base_kn,
-                                            normalizer = rot_normalizer,
-                                            activation_func = activation_func,
-                                            tsf_block_sizes= rot_tsf_block_sizes,
-                                            tsf_block_strides = rot_tsf_block_strides,
-                                            tsf_block_ext_tsf_params=rot_tsf_block_ext_tsf_params,
-                                            ax_weight_depth = rot_ax_weight_depth,
-                                            ax_weight_base_kn = rot_ax_weight_base_kn,
-                                            tsf_weight_depth = rot_tsf_weight_depth,
-                                            tsf_weight_base_kn = rot_tsf_weight_base_kn,
-                                            few_norm=few_norm,
-                                            few_acti=few_acti,
-                                            tagging = tagging,
-                                            parallel_n = rot_parallel_n,
-                                            rot_out_num= rot_out_num,
-                                            version=version,
-                                            concatenate_blocks_with_same_size_and_stride = concatenate_blocks_with_same_size_and_stride,
-                                            use_add_for_blk_concatenate = use_add_for_blk_concatenate,
-                                            )
-
-                for _x_imu, _x_tags in zip(_x_imu_list, _x_tags_list):
-                    if _x_imu.shape[2] % 3 != 0:
-                        raise ValueError(f"{_x_imu.shape[2] % 3 =} should be 0: {_x_imu.shape=}")
-
-                    xx = tf.math.square(_x_imu, _x_imu)
-                    xx = Reshape((xx.shape[1], int(xx.shape[2]/3), 3))(xx)
-                    _rms = tf.sqrt(tf.reduce_sum(xx, 3))
-
-                    _rms_tag = np.copy(_x_tags[::3,:])
-                    _rms_tag[:,2] = Tag.L2
-
-                    imu_rms.append(_rms)
-                    imu_rms_tags.append(_rms_tag)
-
-                    if imu_rot_num > 0:
-
-                        extended_imu = mh3dr([_x_imu,  None if no_rms_for_rot else _rms], 
-                                             [_x_tags, None if no_rms_for_rot else _rms_tag])
-                        imu_rotted.extend(extended_imu)
-
-                        for _ in range(len(extended_imu)):
-                            tags.append(_x_tags)
 
 
     if not no_rms:
@@ -346,28 +264,24 @@ def r_tsf_net(x_shape,
             #tags = tags.reshape((1,) + tags.shape)
             x = Concatenate()([x, _ones[:,:,:,0:_tags.shape[-1]] * _tags.astype('float32')])
 
-        if version <= 2:
-            raise ValueError('version <= 2 is obsolete')
-
-        elif version >= 3:
-            x = MultiheadBlockedTsfMixer(
-                    head_num = btm_head_num,
-                    tsf_mixer_depth=tsf_mixer_depth,
-                    tsf_mixer_base_kn=tsf_mixer_base_kn,
-                    block_mixer_depth=block_mixer_depth,
-                    block_mixer_base_kn=block_mixer_base_kn,
-                    ax_weight_depth=ax_weight_depth,
-                    ax_weight_base_kn=ax_weight_base_kn,
-                    tsf_weight_depth=tsf_weight_depth,
-                    tsf_weight_base_kn=tsf_weight_base_kn,
-                    normalizer=normalizer, 
-                    activation_func=activation_func,
-                    dropout_rate=dropout_rate,
-                    few_norm=few_norm,
-                    few_acti=few_acti,
-                    version=version,
-                    no_out_activation = btm_no_out_activation,
-                    )(x)
+        x = MultiheadBlockedTsfMixer(
+                head_num = btm_head_num,
+                tsf_mixer_depth=tsf_mixer_depth,
+                tsf_mixer_base_kn=tsf_mixer_base_kn,
+                block_mixer_depth=block_mixer_depth,
+                block_mixer_base_kn=block_mixer_base_kn,
+                ax_weight_depth=ax_weight_depth,
+                ax_weight_base_kn=ax_weight_base_kn,
+                tsf_weight_depth=tsf_weight_depth,
+                tsf_weight_base_kn=tsf_weight_base_kn,
+                normalizer=normalizer, 
+                activation_func=activation_func,
+                dropout_rate=dropout_rate,
+                few_norm=few_norm,
+                few_acti=few_acti,
+                version=version,
+                no_out_activation = btm_no_out_activation,
+                )(x)
 
         x_list.append(x)
 
@@ -378,27 +292,10 @@ def r_tsf_net(x_shape,
     else:
         x = Concatenate(axis=1)(x_list) if len(x_list) > 1 else x_list[0]
 
-    ## mixing all  v2
-    #for d in range(2):
-    #    x = Conv1D(64, 1)(x)
-    #    x = Conv1D(512, 2, padding='same')(x)
-    #    x = Conv1D(64, 1)(x)
-
-    #    if not few_norm or d == depth-1:
-    #        x = normalizer()(x)
-    #    if not few_acti or d == 0:
-    #        x = activation_func(x)
-    #    x = Dropout(dropout_rate)(x)
-
-    #x = GlobalAveragePooling1D()(x)
-    #x = normalizer()(x)
-    #x = activation_func(x)
-    #x = Dropout(dropout_rate)(x)
     x = Flatten()(x)
 
     # mixing all
     for d in range(depth-1, -1, -1):
-        #x = Dense(base_kn*(2**d), kernel_regularizer=l2(regularization_rate))(x)
         x = Dense(base_kn*(2**d))(x)
         if residual_num > 0:
             _x = x

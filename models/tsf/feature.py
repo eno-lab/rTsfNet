@@ -57,13 +57,13 @@ def _ts_feature_list():
             'fft_amp_ratio_agg_var', 
             'fft_amp_ratio_agg_skew', 
             'fft_amp_ratio_agg_kurt', 
-            'auto_corralation',
-            'auto_corralation_raw'
-            'auto_corralation_mean',
-            'auto_corralation_var',
-            'auto_corralation_skew',
-            'auto_corralation_kurt',
-            'auto_corralation_ratio_of_max'
+            'autocorralation',
+            'autocorralation_raw'
+            'autocorralation_mean',
+            'autocorralation_var',
+            'autocorralation_skew',
+            'autocorralation_kurt',
+            'autocorralation_ratio_of_max'
             ]
 
 
@@ -72,7 +72,7 @@ def gen_default_ts_feature_params():
     for tsf in _ts_feature_list():
         params[tsf] = True
 
-    params['auto_corralation'] = False
+    params['autocorralation'] = False
     return params
 
 __default_ext_tsf_params = gen_default_ts_feature_params()
@@ -106,8 +106,6 @@ def autocorrelation(x, lags):
 
 
 def _autocorrelation(x_sub_means, variance, lags, var_min_limit=0.1):
-    #x_ones = tf.ones_like(x_sub_means)
-    #tf.reduce_max(tf.reduce_max(tf.reduce_sum(x_ones, axis=1), axis=0), axis=0) # shape=1
     x_total = tf.constant(x_sub_means.shape[1], dtype=tf.keras.mixed_precision.global_policy().compute_dtype)
 
     lags = np.asarray(lags)
@@ -129,35 +127,11 @@ def _autocorrelation(x_sub_means, variance, lags, var_min_limit=0.1):
     kn = tf.constant(e.reshape((e.shape[0], 1, 1, e.shape[1])), dtype=tf.keras.mixed_precision.global_policy().compute_dtype)
     v1 = tf.nn.conv2d(padded_x_sub_means, kn, strides=[1,1,1,1], padding='VALID')
     v2 = v1 * x_sub_means
-    ###############
-    #v3 = tf.reduce_mean(v2, axis=1) # cannot use reduce_mean because there are many pads whose value is zero.
-    #v5 = tf.where(variance < var_min_limit, 0.0, v3 / variance)
-    # with float, if variance < 1, the value going to bigger, so do not calculate <0.1
-    ################
-    ################
-    #v3 = tf.reduce_mean(v2, axis=1)
-    #v5 = tf.where(variance < 0.5, 0.0, v3 / variance)
-    ## with float, if variance < 1, the value going to bigger, so do not calculate <0.5
-    ################
-    #v3 = tf.reduce_mean(v2, axis=1)
-    #v5 = tf.where(variance == 0, variance, v3 / variance)
-    ################
     v3 = tf.reduce_sum(v2, axis=1)
     tf_lags = tf.constant(lags, dtype=tf.keras.mixed_precision.global_policy().compute_dtype)
     v4 = v3 / (x_total - tf_lags)
-    #v5 = tf.where(variance < var_min_limit, 0.0, v4 / variance)
     v5 = tf.math.divide_no_nan(v4, variance)
-    #v5 = v4 / _add_small_value_for_zeros(variance)
-    # with float, if variance < 1, the value going to bigger, so do not calculate <0.1
-    ################
-    #v3 = tf.reduce_sum(v2, axis=1)
-    #tf_lags = tf.constant(lags, dtype=tf.keras.mixed_precision.global_policy().compute_dtype)
-    #v4 = v3 / (x_total / tf_lags)
-    #v5 = tf.math.divide_no_nan(v4, variance)
-    ################
-    ##v5 = v3 * tf_lags
-    ##v5 = v3 * tf_lags / _add_small_value_for_zeros(variance)
-    #v5 = tf.math.divide_no_nan(v3 * tf_lags , variance)
+
     return v5
 
 def _magic_ac(x_sub_means, variance, lags, var_min_limit=0.1):
@@ -589,51 +563,49 @@ def extract_ts_features(x, ext_tsf_params=__default_ext_tsf_params, version=0):
 
             f_list2.append(fft_angle) # fft_angle
 
-        if version > 0:
-            f_list.extend(agg(rfft_coef))
 
     if _is_enabled('magic_ac'):
         magic_ac = _magic_ac(x_sub_means, tf.transpose(variance, perm=(0,2,1)),ext_tsf_params['magic_ac'])
         f_list2.append(magic_ac)
 
-    if _is_enabled('auto_corralation'):
-        autocrr_lags  = ext_tsf_params['auto_corralation']
+    if _is_enabled('autocorralation'):
+        autocrr_lags  = ext_tsf_params['autocorralation']
         autocrrs = _autocorrelation(x_sub_means, tf.transpose(variance, perm=(0,2,1)), autocrr_lags)
-        if not _is_group_enabled('auto_corralation_'):
+        if not _is_group_enabled('autocorralation_'):
             f_list2.append(autocrrs)
 
         else:
-            if not _is_enabled('auto_corralation_raw'):
+            if not _is_enabled('autocorralation_raw'):
                 f_list2.append(autocrrs)
 
             ac_mean = tf.reduce_mean(autocrrs, axis=2, keepdims=True)
             ac_var = None
-            if _is_enabled('auto_corralation_ratio_of_max'):
+            if _is_enabled('autocorralation_ratio_of_max'):
                 f_list2.append(tf.math.divide_no_nan(autocrrs, tf.math.reduce_max(tf.abs(autocrrs), axis=2, keepdims=True)))
 
-            if any([_is_enabled(f'auto_corralation_{_k}') for _k in ('var', 'std', 'skew', 'kurt')]):
+            if any([_is_enabled(f'autocorralation_{_k}') for _k in ('var', 'std', 'skew', 'kurt')]):
                 ac_sub_mean = autocrrs - ac_mean
 
-            if _is_enabled('auto_corralation_mean'):
+            if _is_enabled('autocorralation_mean'):
                 f_list2.append(ac_mean)
 
-            if any([_is_enabled(f'auto_corralation_{_k}') for _k in ('var', 'std', 'skew')]):
+            if any([_is_enabled(f'autocorralation_{_k}') for _k in ('var', 'std', 'skew')]):
                 ac_var = tf.math.reduce_mean(ac_sub_mean ** 2, axis=2, keepdims=True)
-                if _is_enabled('auto_corralation_var'):
+                if _is_enabled('autocorralation_var'):
                     f_list2.append(ac_var)
 
-            if any([_is_enabled(f'auto_corralation_{_k}') for _k in ('std', 'skew')]):
+            if any([_is_enabled(f'autocorralation_{_k}') for _k in ('std', 'skew')]):
                 ac_std = _sqrt(ac_var)
-                if _is_enabled('auto_corralation_std'):
+                if _is_enabled('autocorralation_std'):
                     f_list2.append(ac_std)
 
-            if _is_enabled('auto_corralation_skew'):
+            if _is_enabled('autocorralation_skew'):
                 _skew = _skewness(ac_sub_mean.shape[2], 
                         tf.transpose(ac_sub_mean, perm=(0,2,1)), 
                         tf.transpose(ac_std, perm=(0,2,1)))
                 need_expand_dims.append(_skew)
 
-            if _is_enabled('auto_corralation_kurt'):
+            if _is_enabled('autocorralation_kurt'):
                 _kurt = _kurtosis(ac_sub_mean.shape[2],
                         tf.transpose(ac_sub_mean, perm=(0,2,1)))
                 need_expand_dims.append(_kurt)
