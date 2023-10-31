@@ -37,13 +37,13 @@ def get_config(dataset, lr_magnif=1):
         ext_tsf_params['mean_change'] = True
         ext_tsf_params['fft_amp_agg_skew'] = True
         ext_tsf_params['fft_amp_ratio_agg_mean'] = True
-        ext_tsf_params['auto_corralation_mean'] = True
-        ext_tsf_params['auto_corralation_kurt'] = True
+        ext_tsf_params['autocorralation_mean'] = True
+        ext_tsf_params['autocorralation_kurt'] = True
 
-        ext_tsf_params['auto_corralation'] = np.arange(1, 32, step=1)
+        ext_tsf_params['autocorralation'] = np.arange(1, 32, step=1)
 
         ext_tsf_params256  = ext_tsf_params.copy()
-        ext_tsf_params256['auto_corralation'] = np.arange(1, 128, step=1)
+        ext_tsf_params256['autocorralation'] = np.arange(1, 128, step=1)
 
         config = {
                 'learning_rate': 0.001 * lr_magnif, 
@@ -52,10 +52,6 @@ def get_config(dataset, lr_magnif=1):
                 'use_orig_input': False,
                 'no_rms_for_rot': False,
                 'dropout_rate': 0.5, 
-                ##########
-                'imu_weighting_depth':0, 'imu_weighting_base_kn': 64,  # disable
-                ####################
-                'tsf_weighting_depth':0, 'tsf_weighting_base_kn': 64,  # disable
                 ####################
                 'depth':1, 'base_kn': 128, 
                 'tsf_mixer_depth':2, 'tsf_mixer_base_kn': 128, 
@@ -105,12 +101,12 @@ def get_config(dataset, lr_magnif=1):
         ext_tsf_params['rms'] = True
         ext_tsf_params['fft_amp_ratio_agg_mean'] = True
         ext_tsf_params['fft_amp_agg_skew'] = True
-        ext_tsf_params['auto_corralation'] = np.arange(1, 8, step=1)
-        ext_tsf_params['auto_corralation_mean'] = True
-        ext_tsf_params['auto_corralation_kurt'] = True
+        ext_tsf_params['autocorralation'] = np.arange(1, 8, step=1)
+        ext_tsf_params['autocorralation_mean'] = True
+        ext_tsf_params['autocorralation_kurt'] = True
 
         ext_tsf_params32  = ext_tsf_params.copy()
-        ext_tsf_params32['auto_corralation'] = np.arange(1, 16, step=1)
+        ext_tsf_params32['autocorralation'] = np.arange(1, 16, step=1)
 
         config = {
                 'learning_rate': 0.001 * lr_magnif, 
@@ -129,10 +125,6 @@ def get_config(dataset, lr_magnif=1):
                 ########################
                 'tagging': True, 
                 ####################
-                # disable
-                'tsf_weighting_depth':0, 'tsf_weighting_base_kn': 16,
-                # enabled 
-                ########################
                 'imu_rot_num': 4,
                 'tsf_block_sizes': [16, 32],
                 'tsf_block_strides': [16, 32],
@@ -165,12 +157,12 @@ def get_config(dataset, lr_magnif=1):
         ext_tsf_params['rms'] = True
         ext_tsf_params['fft_amp_ratio_agg_mean'] = True
         ext_tsf_params['fft_amp_agg_skew'] = True
-        ext_tsf_params['auto_corralation'] = np.arange(1, 8, step=1)
-        ext_tsf_params['auto_corralation_mean'] = True
-        ext_tsf_params['auto_corralation_kurt'] = True
+        ext_tsf_params['autocorralation'] = np.arange(1, 8, step=1)
+        ext_tsf_params['autocorralation_mean'] = True
+        ext_tsf_params['autocorralation_kurt'] = True
 
         ext_tsf_params32  = ext_tsf_params.copy()
-        ext_tsf_params32['auto_corralation'] = np.arange(1, 16, step=1)
+        ext_tsf_params32['autocorralation'] = np.arange(1, 16, step=1)
 
         config = {
                 'learning_rate': 0.001 * lr_magnif, 
@@ -188,10 +180,6 @@ def get_config(dataset, lr_magnif=1):
                 'rot_block_mixer_depth':4, 'rot_block_mixer_base_kn': 128, 
                 ########################
                 'tagging': True,
-                ####################
-                # disable
-                'tsf_weighting_depth':0, 'tsf_weighting_base_kn': 16,
-                # enabled 
                 ########################
                 'imu_rot_num': 4,
                 'tsf_block_sizes': [16, 32],
@@ -234,11 +222,11 @@ def get_config(dataset, lr_magnif=1):
         ext_tsf_params['mean_change'] = True
         ext_tsf_params['fft_amp_agg_skew'] = True
         ext_tsf_params['fft_amp_ratio_agg_mean'] = True
-        ext_tsf_params['auto_corralation_mean'] = True
-        ext_tsf_params['auto_corralation_kurt'] = True
-        ext_tsf_params['auto_corralation'] = np.arange(1, 16, step=1) 
+        ext_tsf_params['autocorralation_mean'] = True
+        ext_tsf_params['autocorralation_kurt'] = True
+        ext_tsf_params['autocorralation'] = np.arange(1, 16, step=1) 
         ext_tsf_params128 = ext_tsf_params.copy()
-        ext_tsf_params128['auto_corralation'] = np.arange(1, 64, step=1)
+        ext_tsf_params128['autocorralation'] = np.arange(1, 64, step=1)
 
         config = {
                 'learning_rate': 0.001 * lr_magnif, 
@@ -246,10 +234,6 @@ def get_config(dataset, lr_magnif=1):
                 'extract_imu_tensor_func': extract_imu_tensor_func,
                 'no_rms_for_rot': False,
                 'dropout_rate': 0.5, 
-                ####################
-                'imu_weighting_depth':0, 'imu_weighting_base_kn': 64, 
-                ####################
-                'tsf_weighting_depth':0, 'tsf_weighting_base_kn': 64,  # disable
                 #####################
                 'depth':1, 'base_kn': 32, 
                 'tsf_mixer_depth':2, 'tsf_mixer_base_kn': 128, 
@@ -304,11 +288,11 @@ def get_config(dataset, lr_magnif=1):
         ext_tsf_params['mean_change'] = True
         ext_tsf_params['fft_amp_agg_skew'] = True
         ext_tsf_params['fft_amp_ratio_agg_mean'] = True
-        ext_tsf_params['auto_corralation_mean'] = True
-        ext_tsf_params['auto_corralation_kurt'] = True
-        ext_tsf_params['auto_corralation'] = np.arange(1, 16, step=1) 
+        ext_tsf_params['autocorralation_mean'] = True
+        ext_tsf_params['autocorralation_kurt'] = True
+        ext_tsf_params['autocorralation'] = np.arange(1, 16, step=1) 
         ext_tsf_params192 = ext_tsf_params.copy()
-        ext_tsf_params192['auto_corralation'] = np.arange(1, 86, step=1)
+        ext_tsf_params192['autocorralation'] = np.arange(1, 86, step=1)
 
         config = {
                 'learning_rate': 0.001 * lr_magnif, 
@@ -320,10 +304,6 @@ def get_config(dataset, lr_magnif=1):
                 'depth':1, 'base_kn': 128, 
                 'tsf_mixer_depth':1, 'tsf_mixer_base_kn': 128, 
                 'block_mixer_depth': 1, 'block_mixer_base_kn': 32,
-                ####################
-                'imu_weighting_depth':0, 'imu_weighting_base_kn': 64, 
-                ####################
-                'tsf_weighting_depth':0, 'tsf_weighting_base_kn': 64,  # disable
                 ####################
                 'rot_depth':2, 'rot_base_kn': 64, 
                 'rot_tsf_mixer_depth':1, 'rot_tsf_mixer_base_kn': 128, 
@@ -369,12 +349,12 @@ def get_config(dataset, lr_magnif=1):
         ext_tsf_params['fft_amp_agg_skew'] = True
         ext_tsf_params['fft_amp_ratio_agg_mean'] = True
 
-        ext_tsf_params['auto_corralation_mean'] = True
-        ext_tsf_params['auto_corralation_kurt'] = True
+        ext_tsf_params['autocorralation_mean'] = True
+        ext_tsf_params['autocorralation_kurt'] = True
 
-        ext_tsf_params['auto_corralation'] = np.arange(1, 8, step=1) 
+        ext_tsf_params['autocorralation'] = np.arange(1, 8, step=1) 
         ext_tsf_params64= ext_tsf_params.copy()
-        ext_tsf_params64['auto_corralation'] = np.arange(1, 32, step=1)
+        ext_tsf_params64['autocorralation'] = np.arange(1, 32, step=1)
 
         config = {
                 'learning_rate': 0.001 * lr_magnif, 
@@ -383,10 +363,6 @@ def get_config(dataset, lr_magnif=1):
                 'no_rms_for_rot': False,
                 'dropout_rate': 0.5, 
                 ####################
-                'imu_weighting_depth':0, 'imu_weighting_base_kn': 64, 
-                ####################
-                'tsf_weighting_depth':0, 'tsf_weighting_base_kn': 64,  # disable
-                #####################
                 'depth':1, 'base_kn': 32, 
                 'tsf_mixer_depth':2, 'tsf_mixer_base_kn': 128, 
                 'block_mixer_depth': 1, 'block_mixer_base_kn': 64,
@@ -428,104 +404,118 @@ def get_optim_config(dataset, trial, lr_magnif=1):
     config = get_config(dataset, lr_magnif)
 
     #######################################################
-    #ext_tsf_params = gen_default_ts_feature_params()
+    # PLEASE EDIT HERE
+    #######################################################
+    is_tsf_selection = False
 
-    #params_for_true = ['auto_corralation_mean', 'auto_corralation_kurt']
-    #ext_tsf_params = gen_default_ts_feature_params()
+    #######################################################
+    # TSF selection
+    #######################################################
+    if is_tsf_selection:
+        ext_tsf_params = gen_default_ts_feature_params()
 
-    #for key in ext_tsf_params:
-    #    if key in params_for_true:
-    #        ext_tsf_params[key] = True
-    #        continue
+        params_for_true = ['autocorralation_mean', 'autocorralation_kurt']
+        ext_tsf_params = gen_default_ts_feature_params()
 
-    #    ext_tsf_params[key] = trial.suggest_int(key, low=0, high=1) == 1
+        for key in ext_tsf_params:
+            if key in params_for_true:
+                ext_tsf_params[key] = True
+                continue
 
-    #ext_tsf_params_long = ext_tsf_params.copy()
-    #config['tsf_block_ext_tsf_params'] = [ext_tsf_params, ext_tsf_params_long],
-    #config['rot_tsf_block_ext_tsf_params'] = [ext_tsf_params, ext_tsf_params_long],
+            ext_tsf_params[key] = trial.suggest_int(key, low=0, high=1) == 1
 
-    #if dataset.startswith('ucihar'):
-    #    for elem in ['tsf_block_sizes', 
-    #                 'tsf_block_strides', 
-    #                 'rot_tsf_block_sizes', 
-    #                 'rot_tsf_block_strides']:
-    #        config[elem] = [32, 128]
-    #    ext_tsf_params['auto_corralation'] = np.arange(1, 16, step=1) 
-    #    ext_tsf_params_long['auto_corralation'] = np.arange(1, 64, step=1) 
-    #elif dataset.startswith('opportunity'):
-    #    for elem in ['tsf_block_sizes', 
-    #                 'tsf_block_strides', 
-    #                 'rot_tsf_block_sizes', 
-    #                 'rot_tsf_block_strides']:
-    #        config[elem] = [16, 32]
-    #        #config[elem] = [15]
-    #    ext_tsf_params['auto_corralation'] = np.arange(1, 8, step=1) 
-    #    ext_tsf_params_long['auto_corralation'] = np.arange(1, 16, step=1) 
-    #    #ext_tsf_params['auto_corralation'] = np.arange(1, 8, step=1) 
-    #elif dataset.startswith('pamap2'):
-    #    for elem in ['tsf_block_sizes', 
-    #                 'tsf_block_strides', 
-    #                 'rot_tsf_block_sizes', 
-    #                 'rot_tsf_block_strides']:
-    #        config[elem] = [64, 128]
-    #    ext_tsf_params['auto_corralation'] = np.arange(1, 32, step=1) 
-    #    ext_tsf_params_long['auto_corralation'] = np.arange(1, 128, step=1) 
-    #elif dataset.startswith('daphnet'):
-    #    for elem in ['tsf_block_sizes', 
-    #                 'tsf_block_strides', 
-    #                 'rot_tsf_block_sizes', 
-    #                 'rot_tsf_block_strides']:
-    #        config[elem] = [32, 192]
-    #    ext_tsf_params['auto_corralation'] = np.arange(1, 16, step=1) 
-    #    ext_tsf_params_long['auto_corralation'] = np.arange(1, 96, step=1) 
-    #elif dataset.startswith('wisdm'):
-    #    for elem in ['tsf_block_sizes', 
-    #                 'tsf_block_strides', 
-    #                 'rot_tsf_block_sizes', 
-    #                 'rot_tsf_block_strides']:
-    #        config[elem] = [16, 64] 
-    #    ext_tsf_params['auto_corralation'] = np.arange(1, 8, step=1) 
-    #    ext_tsf_params_long['auto_corralation'] = np.arange(1, 32, step=1) 
-    #else:
-    #    raise NotImplementedError("Please add new implementation here")
+        ext_tsf_params_long = ext_tsf_params.copy()
+        config['tsf_block_ext_tsf_params'] = [ext_tsf_params, ext_tsf_params_long],
+        config['rot_tsf_block_ext_tsf_params'] = [ext_tsf_params, ext_tsf_params_long],
 
-    ######################################################
-    base_kn = 32*2**trial.suggest_int('base_kn', low=-1, high=2)
-    depth = trial.suggest_int('depth', low=1, high=4)
-    rot_base_kn = 32*2**trial.suggest_int('rot_base_kn', low=-1, high=2)
-    rot_depth = trial.suggest_int('rot_depth', low=1, high=4)
+        if dataset.startswith('ucihar'):
+            for elem in ['tsf_block_sizes', 
+                         'tsf_block_strides', 
+                         'rot_tsf_block_sizes', 
+                         'rot_tsf_block_strides']:
+                config[elem] = [32, 128]
+            ext_tsf_params['autocorralation'] = np.arange(1, 16, step=1) 
+            ext_tsf_params_long['autocorralation'] = np.arange(1, 64, step=1) 
+        elif dataset.startswith('opportunity'):
+            for elem in ['tsf_block_sizes', 
+                         'tsf_block_strides', 
+                         'rot_tsf_block_sizes', 
+                         'rot_tsf_block_strides']:
+                config[elem] = [16, 32]
+                #config[elem] = [15]
+            ext_tsf_params['autocorralation'] = np.arange(1, 8, step=1) 
+            ext_tsf_params_long['autocorralation'] = np.arange(1, 16, step=1) 
+            #ext_tsf_params['autocorralation'] = np.arange(1, 8, step=1) 
+        elif dataset.startswith('pamap2'):
+            for elem in ['tsf_block_sizes', 
+                         'tsf_block_strides', 
+                         'rot_tsf_block_sizes', 
+                         'rot_tsf_block_strides']:
+                config[elem] = [64, 128]
+            ext_tsf_params['autocorralation'] = np.arange(1, 32, step=1) 
+            ext_tsf_params_long['autocorralation'] = np.arange(1, 128, step=1) 
+        elif dataset.startswith('daphnet'):
+            for elem in ['tsf_block_sizes', 
+                         'tsf_block_strides', 
+                         'rot_tsf_block_sizes', 
+                         'rot_tsf_block_strides']:
+                config[elem] = [32, 192]
+            ext_tsf_params['autocorralation'] = np.arange(1, 16, step=1) 
+            ext_tsf_params_long['autocorralation'] = np.arange(1, 96, step=1) 
+        elif dataset.startswith('wisdm'):
+            for elem in ['tsf_block_sizes', 
+                         'tsf_block_strides', 
+                         'rot_tsf_block_sizes', 
+                         'rot_tsf_block_strides']:
+                config[elem] = [16, 64] 
+            ext_tsf_params['autocorralation'] = np.arange(1, 8, step=1) 
+            ext_tsf_params_long['autocorralation'] = np.arange(1, 32, step=1) 
+        else:
+            raise NotImplementedError("Please add new implementation here")
+    #####################################################
 
-    tsf_mixer_base_kn = 32*2**trial.suggest_int('tsf_mixer_base_kn', low=-1, high=2)
-    tsf_mixer_depth = trial.suggest_int('tsf_mixer_depth', low=1, high=4)
-    block_mixer_base_kn = 32*2**trial.suggest_int('block_mixer_base_kn', low=-1, high=2)
-    block_mixer_depth= trial.suggest_int('block_mixer_depth', low=1, high=4)
-    ax_weight_base_kn = 32*2**trial.suggest_int('ax_weight_base_kn', low=-1, high=2)
-    ax_weight_depth = trial.suggest_int('ax_weight_depth', low=1, high=4)
-    rot_ax_weight_base_kn = 32*2**trial.suggest_int('rot_ax_weight_base_kn', low=-1, high=2)
-    rot_ax_weight_depth = trial.suggest_int('rot_ax_weight_depth', low=1, high=4)
-    tsf_weight_base_kn = 32*2**trial.suggest_int('tsf_weight_base_kn', low=-1, high=2)
-    tsf_weight_depth = trial.suggest_int('tsf_weight_depth', low=1, high=4)
+    else:
 
-    config['base_kn'] = base_kn
-    config['depth'] = depth
-    config['tsf_mixer_base_kn'] = tsf_mixer_base_kn
-    config['tsf_mixer_depth'] = tsf_mixer_depth 
-    config['block_mixer_base_kn'] = block_mixer_base_kn
-    config['block_mixer_depth'] = block_mixer_depth 
-    config['rot_base_kn'] = rot_base_kn
-    config['rot_depth'] = rot_depth
-    config['rot_tsf_mixer_base_kn'] = tsf_mixer_base_kn
-    config['rot_tsf_mixer_depth'] = tsf_mixer_depth 
-    config['rot_block_mixer_base_kn'] = block_mixer_base_kn
-    config['rot_block_mixer_depth'] = block_mixer_depth 
-    config['ax_weight_base_kn'] = ax_weight_base_kn
-    config['ax_weight_depth'] = ax_weight_depth 
-    config['rot_ax_weight_base_kn'] = rot_ax_weight_base_kn
-    config['rot_ax_weight_depth'] = rot_ax_weight_depth 
-    config['tsf_weight_base_kn'] = tsf_weight_base_kn
-    config['tsf_weight_depth'] = tsf_weight_depth 
-    config['rot_tsf_weight_base_kn'] = tsf_weight_base_kn
-    config['rot_tsf_weight_depth'] = tsf_weight_depth 
+    #######################################################
+    # param selection
+    #######################################################
+        base_kn = 32*2**trial.suggest_int('base_kn', low=-1, high=2)
+        depth = trial.suggest_int('depth', low=1, high=4)
+        rot_base_kn = 32*2**trial.suggest_int('rot_base_kn', low=-1, high=2)
+        rot_depth = trial.suggest_int('rot_depth', low=1, high=4)
+
+        tsf_mixer_base_kn = 32*2**trial.suggest_int('tsf_mixer_base_kn', low=-1, high=2)
+        tsf_mixer_depth = trial.suggest_int('tsf_mixer_depth', low=1, high=4)
+        block_mixer_base_kn = 32*2**trial.suggest_int('block_mixer_base_kn', low=-1, high=2)
+        block_mixer_depth= trial.suggest_int('block_mixer_depth', low=1, high=4)
+        ax_weight_base_kn = 32*2**trial.suggest_int('ax_weight_base_kn', low=-1, high=2)
+        ax_weight_depth = trial.suggest_int('ax_weight_depth', low=1, high=4)
+        rot_ax_weight_base_kn = 32*2**trial.suggest_int('rot_ax_weight_base_kn', low=-1, high=2)
+        rot_ax_weight_depth = trial.suggest_int('rot_ax_weight_depth', low=1, high=4)
+        tsf_weight_base_kn = 32*2**trial.suggest_int('tsf_weight_base_kn', low=-1, high=2)
+        tsf_weight_depth = trial.suggest_int('tsf_weight_depth', low=1, high=4)
+
+        config['base_kn'] = base_kn
+        config['depth'] = depth
+        config['tsf_mixer_base_kn'] = tsf_mixer_base_kn
+        config['tsf_mixer_depth'] = tsf_mixer_depth 
+        config['block_mixer_base_kn'] = block_mixer_base_kn
+        config['block_mixer_depth'] = block_mixer_depth 
+        config['rot_base_kn'] = rot_base_kn
+        config['rot_depth'] = rot_depth
+        config['rot_tsf_mixer_base_kn'] = tsf_mixer_base_kn
+        config['rot_tsf_mixer_depth'] = tsf_mixer_depth 
+        config['rot_block_mixer_base_kn'] = block_mixer_base_kn
+        config['rot_block_mixer_depth'] = block_mixer_depth 
+        config['ax_weight_base_kn'] = ax_weight_base_kn
+        config['ax_weight_depth'] = ax_weight_depth 
+        config['rot_ax_weight_base_kn'] = rot_ax_weight_base_kn
+        config['rot_ax_weight_depth'] = rot_ax_weight_depth 
+        config['tsf_weight_base_kn'] = tsf_weight_base_kn
+        config['tsf_weight_depth'] = tsf_weight_depth 
+        config['rot_tsf_weight_base_kn'] = tsf_weight_base_kn
+        config['rot_tsf_weight_depth'] = tsf_weight_depth 
+    #######################################################
 
     return config
 
