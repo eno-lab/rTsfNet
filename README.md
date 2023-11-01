@@ -6,7 +6,7 @@ It is a reference implementation of rTsfNet: multi-head rotation and time series
 Use of rTsfNet in publications must be acknowledged by referencing the following publication. 
 
 - Yu Enokibori. 2023. rTsfNet: a DNN model with Multi-head 3D Rotation and Time Series Feature Extraction for IMU-based Human Activity Recognition. arXiv:2310.19283 [cs.HC]
-- https://doi.org/10.48550/arXiv.2310.19283 (or https://arxiv.org/abs/2310.19283 )
+- https://doi.org/10.48550/arXiv.2310.19283
 
 ## NOTE
 The DOI and citation text will be updated for formal one. So, please check here before you make a submission.
