@@ -25,6 +25,13 @@ The best results and trained models of each dataest are available at
 - https://bit.ly/46GWu3L
 .
 
+With the benchmark system, you can run rTsfNet like:
+```
+CUDA_VISIBLE_DEVICES=0 python3 -m main --datasets "['ucihar']" --model_name 'tsf' --boot_strap_epochs 150 --patience 50 --epochs 350
+```
+
+- More than 150 or so epochs of bootstrap protection should be used.
+
 # Benchmark setup
 This program can be worked with the following benchmark system.
 Simply marge this repository for the benchmark system, then select 'tsf' for the model name.
@@ -38,3 +45,10 @@ The author recommend the following steps to optimize TSF set and paramters.
 1. Optimize time series feature (TSF) set with temporal network structures.
 2. Optimize parameters of network structure with the selected TSFs.
 You can use --optuna option of the IMU-based HAR Benchmark.
+like:
+```
+CUDA_VISIBLE_DEVICES=0 python3 -m main --datasets "['ucihar']" --model_name 'tsf' --boot_strap_epochs 150 --patience 50 --epochs 350 --optuna --optuna_study_suffix 20231030 --optuna_num_of_trial 600
+```
+
+- More than 300 or 600 of trials are suggested.
+- More than 150 or so epochs of bootstrap protection should be used.
