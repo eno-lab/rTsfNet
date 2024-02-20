@@ -11,23 +11,23 @@ import numpy as np
 from .utils import AbstructLayer
 
 def _ts_feature_list():
-    return ['mean', 
-            'min', 
-            'max', 
-            'rms', 
-            'std', 
+    return ['mean',
+            'min',
+            'max',
+            'rms',
+            'std',
             'skewness',
             'kurtosis',
             'variance',
-            'mean_change', 
-            'sum_of_change', 
-            'mean_abs_change', 
-            'quantiles', 
+            'mean_change',
+            'sum_of_change',
+            'mean_abs_change',
+            'quantiles',
             'tb_quantiles',
-            'abs_energy', 
-            'abs_max', 
-            'abs_sum_of_changes', 
-            'cid_ce', 
+            'abs_energy',
+            'abs_max',
+            'abs_sum_of_changes',
+            'cid_ce',
             'count_above_zero',
             'count_above_mean',
             'count_above_tb_start',
@@ -35,28 +35,28 @@ def _ts_feature_list():
             'count_above_tb_median',
             'count_above_tb_75p',
             'count_above_tb_end',
-            'number_crossing_zero', 
-            'number_crossing_mean', 
-            'number_crossing_25p', 
-            'number_crossing_median', 
-            'number_crossing_75p', 
-            'number_crossing_tb_start', 
-            'number_crossing_tb_25p', 
-            'number_crossing_tb_median', 
-            'number_crossing_tb_75p', 
-            'number_crossing_tb_end', 
-            'fft_amp', 
-            'fft_amp_agg_mean', 
-            'fft_amp_agg_var', 
-            'fft_amp_agg_skew', 
-            'fft_amp_agg_kurt', 
+            'number_crossing_zero',
+            'number_crossing_mean',
+            'number_crossing_25p',
+            'number_crossing_median',
+            'number_crossing_75p',
+            'number_crossing_tb_start',
+            'number_crossing_tb_25p',
+            'number_crossing_tb_median',
+            'number_crossing_tb_75p',
+            'number_crossing_tb_end',
+            'fft_amp',
+            'fft_amp_agg_mean',
+            'fft_amp_agg_var',
+            'fft_amp_agg_skew',
+            'fft_amp_agg_kurt',
             'fft_angle',
-            'fft_amp_zero_hz', 
-            'fft_amp_ratio', 
-            'fft_amp_ratio_agg_mean', 
-            'fft_amp_ratio_agg_var', 
-            'fft_amp_ratio_agg_skew', 
-            'fft_amp_ratio_agg_kurt', 
+            'fft_amp_zero_hz',
+            'fft_amp_ratio',
+            'fft_amp_ratio_agg_mean',
+            'fft_amp_ratio_agg_var',
+            'fft_amp_ratio_agg_skew',
+            'fft_amp_ratio_agg_kurt',
             'autocorralation',
             'autocorralation_raw'
             'autocorralation_mean',
@@ -86,7 +86,7 @@ def ext_tsf(x, block_size=None, stride=None, return_list=True, ext_tsf_params=__
         block_size = x.shape[1]
         stride = block_size
 
-    tsf = [] 
+    tsf = []
     for six in range(0, x.shape[1]-block_size+1, stride):
         tsf.append(ExtractTsFeatures(ext_tsf_params=ext_tsf_params)(x[:,six:(six+block_size),:])) # b l f tsf
 
@@ -95,7 +95,7 @@ def ext_tsf(x, block_size=None, stride=None, return_list=True, ext_tsf_params=__
 
     else:
         return Concatenate()(tsf)
-        
+
 
 
 def autocorrelation(x, lags):
@@ -182,7 +182,7 @@ def sub_means(x, means=None):
     # means: b, f
 
     if means is None:
-        means = tf.reduce_mean(x, 1, keepdims=True) 
+        means = tf.reduce_mean(x, 1, keepdims=True)
     else:
         means = tf.expand_dims(means, 1)
 
@@ -209,7 +209,7 @@ def extract_time_based_quantiles(x, points=[0, 0.25, 0.5, 0.75, 1]):
 
 @tf.function
 def _sqrt(x): # tf.sqrt makes inf with 0. Why does tf take such implementation???
-    # this implementation is better than tf.where(x == 0, 0, sqrt(x)) 
+    # this implementation is better than tf.where(x == 0, 0, sqrt(x))
     # from viewpoint of gradient tape for the elements which are zero
     # probably.
     return tf.where(x == 0, 0.0, tf.sqrt(x))
@@ -273,7 +273,7 @@ def extract_ts_features(x, ext_tsf_params=__default_ext_tsf_params, version=0):
         val = ext_tsf_params[key]
         if type(val) == bool:
             return ext_tsf_params[key]
-        
+
         return val is not None
 
     assert any([_is_enabled(val) for val in ext_tsf_params])
@@ -290,7 +290,7 @@ def extract_ts_features(x, ext_tsf_params=__default_ext_tsf_params, version=0):
     x_diff = diff(x)
     x_diff_x_diff = x_diff**2
     x_diff_abs = tf.abs(x_diff)
-    ###################################### 
+    ######################################
 
     means = tf.reduce_mean(x, 1)
     if _is_enabled('mean'):
@@ -348,11 +348,11 @@ def extract_ts_features(x, ext_tsf_params=__default_ext_tsf_params, version=0):
     if _is_enabled('abs_sum_of_changes'):
         f_list.append(tf.reduce_sum(x_diff_abs, 1, keepdims=True)) # absolute_sum_of_changes
 
-    ###################################### 
+    ######################################
     if _is_enabled('cid_ce'):
         f_list.append(_sqrt(tf.reduce_sum(x_diff_x_diff, 1, keepdims=True))) # cid_ce
 
-    ###################################### 
+    ######################################
     def count_above_zero(x_sub_val_sign):
         x = tf.math.count_nonzero(x_sub_val_sign -1, 1) # target values are marked as zero, others < 0
         return (x * -1) + x_sample_len # count zeros and calc diff from the time length
@@ -393,7 +393,7 @@ def extract_ts_features(x, ext_tsf_params=__default_ext_tsf_params, version=0):
         if _is_enabled('count_above_tb_end_p'):
             need_cast_expand_dims.append(count_above_zero(x_sub_tb_val_sign[4])/x.shape[1])
 
-    ###################################### 
+    ######################################
     # crossings
     if _is_enabled('number_crossing_mean'):
         number_crossing_mean = tf.math.count_nonzero(diff(x_sub_means_sign), 1)
@@ -431,20 +431,20 @@ def extract_ts_features(x, ext_tsf_params=__default_ext_tsf_params, version=0):
             need_cast_expand_dims.append(tf.math.count_nonzero(diff(x_sub_tb_val_sign[3]), 1))
         if _is_enabled('number_crossing_tb_end'):
             need_cast_expand_dims.append(tf.math.count_nonzero(diff(x_sub_tb_val_sign[4]), 1))
-    ###################################### 
+    ######################################
 
-    def freq_agg(freq, kind=('mean', 'var', 'std', 'skew', 'kurt')): # freq: b, f, freq 
+    def freq_agg(freq, kind=('mean', 'var', 'std', 'skew', 'kurt')): # freq: b, f, freq
         bin_ix = tf.ones_like(freq) * np.arange(freq.shape[2])
         freq_sum = tf.math.reduce_sum(freq, axis=2, keepdims=True)
         def _get_m(m):
             return tf.math.divide_no_nan(tf.reduce_sum((bin_ix ** m)*freq, axis=2, keepdims=True), freq_sum)
 
-        m1 = None 
+        m1 = None
         m2 = None
         m3 = None
         m4 = None
         _var = None
-       
+
         res = []
         if 'mean' in kind:
             m1 = _get_m(1)
@@ -541,7 +541,7 @@ def extract_ts_features(x, ext_tsf_params=__default_ext_tsf_params, version=0):
             #fft_angle = tf.math.atan2(fft_coef_imag, _add_small_value_for_zeros(fft_coef_real))
             fft_angle = tf.math.atan2(fft_coef_imag, fft_coef_real)
             fft_angle = tf.where(fft_coef_real == 0, 0.0, fft_angle)
-            #f_list2.append(tf.math.angle(fft_coef)) # fft_angle: it also make inf. 
+            #f_list2.append(tf.math.angle(fft_coef)) # fft_angle: it also make inf.
 
             fft_angle = fft_angle + math.pi # conv -pi < x < pi --> 0 < x < 2pi
 
@@ -553,7 +553,7 @@ def extract_ts_features(x, ext_tsf_params=__default_ext_tsf_params, version=0):
 
             def _plus_mask(x):
                 s = tf.sign(x)
-                return s*tf.sign(s+1) # sign(s+1): zero and plus = 1, others = 0 
+                return s*tf.sign(s+1) # sign(s+1): zero and plus = 1, others = 0
             _mask_gt_pi = _plus_mask(fft_angle - math.pi)
             _mask_lt_m_pi = _plus_mask(fft_angle*-1 - math.pi)
             _mask_no_op = tf.ones_like(fft_angle) - _mask_gt_pi - _mask_lt_m_pi
@@ -600,8 +600,8 @@ def extract_ts_features(x, ext_tsf_params=__default_ext_tsf_params, version=0):
                     f_list2.append(ac_std)
 
             if _is_enabled('autocorralation_skew'):
-                _skew = _skewness(ac_sub_mean.shape[2], 
-                        tf.transpose(ac_sub_mean, perm=(0,2,1)), 
+                _skew = _skewness(ac_sub_mean.shape[2],
+                        tf.transpose(ac_sub_mean, perm=(0,2,1)),
                         tf.transpose(ac_std, perm=(0,2,1)))
                 need_expand_dims.append(_skew)
 
@@ -610,7 +610,7 @@ def extract_ts_features(x, ext_tsf_params=__default_ext_tsf_params, version=0):
                         tf.transpose(ac_sub_mean, perm=(0,2,1)))
                 need_expand_dims.append(_kurt)
 
-    ###################################### 
+    ######################################
     for f in need_cast_expand_dims:
         f = tf.cast(f, tf.keras.mixed_precision.global_policy().compute_dtype)
         f = tf.expand_dims(f, 2)
@@ -690,7 +690,7 @@ def extract_ts_features(x, ext_tsf_params=__default_ext_tsf_params, version=0):
     # value_count
     # variance_larger_than_standard_deviation
     # variation_coefficient
-    # 
+    #
 
 @tf.keras.saving.register_keras_serializable('tsf')
 class ExtractTsFeatures(Layer):
@@ -711,8 +711,8 @@ class ExtractTsFeatures(Layer):
 @tf.keras.saving.register_keras_serializable('tsf')
 class MultiheadBlockedTsfMixer(AbstructLayer):
     def __init__(self,
-                 head_num = 1, 
-                 tsf_mixer_depth = 2, 
+                 head_num = 1,
+                 tsf_mixer_depth = 2,
                  tsf_mixer_base_kn = 32,
                  block_mixer_depth = 2,
                  block_mixer_base_kn = 32,
@@ -807,7 +807,7 @@ class MultiheadBlockedTsfMixer(AbstructLayer):
         return config
 
     def call(self, inputs):
-        results = [] 
+        results = []
         _l = [btm(inputs) for btm in self.btm_list]
         for i in range(len(_l)):
             if i == 0:
@@ -819,8 +819,8 @@ class MultiheadBlockedTsfMixer(AbstructLayer):
 
 @tf.keras.saving.register_keras_serializable('tsf')
 class BlockedTsfMixer(AbstructLayer):
-    def __init__(self, 
-                 tsf_mixer_depth = 2, 
+    def __init__(self,
+                 tsf_mixer_depth = 2,
                  tsf_mixer_base_kn = 32,
                  block_mixer_depth = 2,
                  block_mixer_base_kn = 32,
@@ -868,7 +868,7 @@ class BlockedTsfMixer(AbstructLayer):
                 s.add(Dropout(self.dropout_rate, name=self._gen_name('dropout')))
             return s
 
-        # mixing on block- and feature wize 
+        # mixing on block- and feature wize
         self.bf_wise_mixer = gen_mixer()
 
         self.bf_wise_mixer_ax_w = gen_mixer()
@@ -936,13 +936,13 @@ class BlockedTsfMixer(AbstructLayer):
         _ax_w = None
         if self.ax_weight_depth > 0:
             _w_x_ax  = self.block_wise_mixers['for_ax_weight'](self.bf_wise_mixer_ax_w(inputs))
-            _ax_w = tf.expand_dims(self.gen_ax_weight(_w_x_ax), axis=3) 
+            _ax_w = tf.expand_dims(self.gen_ax_weight(_w_x_ax), axis=3)
 
         _tsf_w = None
         if self.tsf_weight_depth > 0:
             _w_x_tsf = self.block_wise_mixers['for_tsf_weight'](self.bf_wise_mixer_tsf_w(inputs))
             _tsf_w = tf.expand_dims(self.gen_tsf_weight(_w_x_tsf), axis=2) # batch, block, sensor_axes, 1
-  
+
         x = self.bf_wise_mixer(inputs)
         if _ax_w is not None:
             x = x * _ax_w

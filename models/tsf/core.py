@@ -105,7 +105,14 @@ def r_tsf_net(x_shape,
     if extract_imu_tensor_func is None: # TODO remove. for keeping the compatibility for old rot_tsf_mlps on main.py
         extract_imu_tensor_func = extract_imu_tensor_func_pamap2
 
-    x_except_imu, x_tags_except_imu, x_imu, x_tags = extract_imu_tensor_func(x, version)
+    x_sensor_ids = None
+    _extracted_features = extract_imu_tensor_func(x, version)
+    if len(_extracted_features) == 4:
+        x_except_imu, x_tags_except_imu, x_imu, x_tags = _extracted_features
+    elif len(_extracted_features) == 5:
+        x_except_imu, x_tags_except_imu, x_imu, x_tags, x_sensor_ids = _extracted_features
+    else:
+        raise ValueError("Invalid extracted feature number. Is not it implemented well yet?")
 
     imu_rotted = []
     imu_rms = []
@@ -114,7 +121,7 @@ def r_tsf_net(x_shape,
 
     if imu_rot_num > 0:
         for _x_imu_list, _x_tags_list in zip(x_imu, x_tags):
-            mh3dr = Multihead3dRotation(head_nums=imu_rot_num, 
+            mh3dr = Multihead3dRotation(head_nums=imu_rot_num,
                                         depth=rot_depth,
                                         base_kn=rot_base_kn,
                                         dropout_rate=dropout_rate,
@@ -157,7 +164,7 @@ def r_tsf_net(x_shape,
 
                 if imu_rot_num > 0:
 
-                    extended_imu = mh3dr([_x_imu,  None if no_rms_for_rot else _rms], 
+                    extended_imu = mh3dr([_x_imu,  None if no_rms_for_rot else _rms],
                                          [_x_tags, None if no_rms_for_rot else _rms_tag])
                     imu_rotted.extend(extended_imu)
 
@@ -255,14 +262,24 @@ def r_tsf_net(x_shape,
             x = Concatenate(axis=1)([tf.expand_dims(tsf, 1) for tsf in tsf_list])
 
         if tagging:
-            _tags = np.copy(tags)
-            _tags = np.concatenate([tags, np.repeat(block_id, tags.shape[0]).reshape(tags.shape[0], 1)], axis=-1)
+            #_tags = np.copy(tags) # [axes num, [sensor_location_id, sensor type (e.g., ACC), axis (e.g., X)]]
+            _tags = np.concatenate([tags, np.repeat(block_id, tags.shape[0]).reshape(tags.shape[0], 1)], axis=-1) # add block ids
 
             _ones = tf.ones_like(x)
-            while _ones.shape[-1] < tags.shape[-1]:
+            while _ones.shape[-1] < _tags.shape[-1]:
                 _ones = tf.concat([_ones, _ones], axis=-1)
             #tags = tags.reshape((1,) + tags.shape)
-            x = Concatenate()([x, _ones[:,:,:,0:_tags.shape[-1]] * _tags.astype('float32')])
+            x = tf.concat([x, _ones[:,:,:,0:_tags.shape[-1]] * _tags.astype('float32')], axis=-1)
+
+            # add sensor ids
+            if x_sensor_ids is not None:
+                # the shape of x_sensor_ids: batch, 1, 1
+                assert x_sensor_ids.shape == (x.shape[0], 1, 1)
+                # the shape of x: batch, blocks, sensor_axes, tsf
+                _tmp = tf.expand_dims(x_sensor_ids, 3) # batch, 1, 1, 1
+                _tmp = tf.repeat(_tmp, x.shape[1], axis=1) # batch, blocks, 1, 1
+                _tmp = tf.repeat(_tmp, x.shape[2], axis=2) # batch, blocks, sensor_axes, 1
+                x = tf.concat([x, _tmp], axis=-1)
 
         x = MultiheadBlockedTsfMixer(
                 head_num = btm_head_num,
@@ -274,7 +291,7 @@ def r_tsf_net(x_shape,
                 ax_weight_base_kn=ax_weight_base_kn,
                 tsf_weight_depth=tsf_weight_depth,
                 tsf_weight_base_kn=tsf_weight_base_kn,
-                normalizer=normalizer, 
+                normalizer=normalizer,
                 activation_func=activation_func,
                 dropout_rate=dropout_rate,
                 few_norm=few_norm,
