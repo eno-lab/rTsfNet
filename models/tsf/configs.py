@@ -78,7 +78,7 @@ def get_config(dataset, lr_magnif=1):
                 'rot_tsf_mixer_depth':1, 'rot_tsf_mixer_base_kn': 32,
                 'rot_block_mixer_depth':1, 'rot_block_mixer_base_kn': 16,
                 ###################
-                'ax_weight_depth':1, 'ax_weight_base_kn': ,
+                'ax_weight_depth':1, 'ax_weight_base_kn': 16,
                 'tsf_weight_depth':4, 'tsf_weight_base_kn': 32,
                 'rot_ax_weight_depth':3, 'rot_ax_weight_base_kn': 32,
                 'rot_tsf_weight_depth':4, 'rot_tsf_weight_base_kn': 32,
@@ -288,7 +288,7 @@ def get_config(dataset, lr_magnif=1):
                 'rot_tsf_mixer_depth':1, 'rot_tsf_mixer_base_kn': 32,
                 'rot_block_mixer_depth':1, 'rot_block_mixer_base_kn': 16,
                 ###################
-                'ax_weight_depth':1, 'ax_weight_base_kn': ,
+                'ax_weight_depth':1, 'ax_weight_base_kn': 16,
                 'tsf_weight_depth':4, 'tsf_weight_base_kn': 32,
                 'rot_ax_weight_depth':3, 'rot_ax_weight_base_kn': 32,
                 'rot_tsf_weight_depth':4, 'rot_tsf_weight_base_kn': 32,

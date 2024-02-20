@@ -224,7 +224,7 @@ def extract_imu_tensor_func_m_health(in_x, version=1):
         Separation: NO
         Separation-with_sid: NO
     """
-        sensor_location = 1
+    sensor_location = 1
     x_imu = []
     tags = []
     x_except_imu = None
