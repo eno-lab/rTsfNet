@@ -217,17 +217,51 @@ def extract_imu_tensor_func_real_world(in_x, version=1):
 
 
 def extract_imu_tensor_func_m_health(in_x, version=1):
-    sensor_location = 1
+    """
+        Normal: OK
+        Combination: OK
+        Combination-with_sid: NO
+        Separation: NO
+        Separation-with_sid: NO
+    """
+        sensor_location = 1
     x_imu = []
     tags = []
-
-    x_imu.append(in_x[:,:,0:3])
-    tags.append(np.array([[sensor_location, Tag.ACC, axis] for axis in Tag.XYZ]))
-    sensor_location += 1
-
-    six = 3+2 # skip two ecg
+    x_except_imu = None
+    x_tags_except_imu = None
 
     imu_num = 2
+    available_sensors = [True, True]
+    if in_x.shape[-1] == 3: # 0 only
+        available_sensors = [True, False]
+    elif in_x.shape[-1] == 2: # 1 (ecgs) only
+        available_sensors = [False, True]
+    elif in_x.shape[-1] % 9 == 5: # 0 + 1 + [2, 3]
+        imu_num = (in_x.shape[-1]-5)//9
+    elif in_x.shape[-1] % 9 == 2:  # 1 + [2, 3]
+        imu_num = (in_x.shape[-1]-2)//9
+        available_sensors = [False, True]
+    elif in_x.shape[-1] % 9 == 3:  # 0 + [2, 3]
+        imu_num = (in_x.shape[-1]-3)//9
+        available_sensors = [True, False]
+    elif in_x.shape[-1] % 9 == 0:  # [2, 3]
+        imu_num = (in_x.shape[-1]-3)//9
+        available_sensors = [False, False]
+    else:
+        raise ValueError(f"Invalid input shape: {in_x.shape=}")
+
+    six = 0
+    if available_sensors[0]:
+        x_imu.append(in_x[:,:,0:3])
+        tags.append(np.array([[sensor_location, Tag.ACC, axis] for axis in Tag.XYZ]))
+        six += 3
+    sensor_location += 1
+
+    ecg_six = six
+    if available_sensors[1]:
+        six = 2 # skip two ecg
+
+
     imu_feature_num = 3 # acc, mag, gyro
     for i in range(imu_num):
         x_imu.append(in_x[:,:,(six+3*imu_feature_num*i):(six+3*imu_feature_num*(1+i))])
@@ -239,8 +273,9 @@ def extract_imu_tensor_func_m_health(in_x, version=1):
         tags.append(np.array(l))
         sensor_location += 1
 
-    x_except_imu = [in_x[:,:,3:5]] # ECGs
-    x_tags_except_imu = [np.array([[sensor_location+i, Tag.ECG, Tag.NONE] for i in range(0, 2)])]
+    if available_sensors[1]:
+        x_except_imu = [in_x[:,:,ecg_six:(ecg_six+2)]] # ECGs
+        x_tags_except_imu = [np.array([[sensor_location+i, Tag.ECG, Tag.NONE] for i in range(0, 2)])]
 
     return x_except_imu, x_tags_except_imu, [x_imu[0:1], x_imu[1:3]], [tags[0:1], tags[1:3]]
 
