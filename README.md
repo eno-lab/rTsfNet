@@ -41,7 +41,7 @@ IMU-based HAR Benchmark
 
 # Suggestion: How to optimize parameters
 
-The author recommend the following steps to optimize TSF set and paramters.
+The authors recommend the following steps to optimize TSF set and paramters.
 1. Optimize time series feature (TSF) set with temporal network structures.
 2. Optimize parameters of network structure with the selected TSFs.
 You can use --optuna option of the IMU-based HAR Benchmark.
@@ -52,3 +52,7 @@ CUDA_VISIBLE_DEVICES=0 python3 -m main --datasets "['ucihar']" --model_name 'tsf
 
 - More than 300 or 600 of trials are suggested.
 - More than 150 or so epochs of bootstrap protection should be used.
+
+# Note
+Tensorflow 2.15 has [a bug](https://github.com/tensorflow/tensorflow/issues/62607) on LayerNormalization.
+So please use other versions or set 1e-7 for the epsilon attribute of LayerNormalization.
