@@ -300,12 +300,14 @@ def extract_imu_tensor_func_mighar(in_x, version=1):
     sensor_num = in_x.shape[-1]//9
     sid_list = list(range(sensor_num))
 
+    sid = None
     if in_x.shape[-1]%9 == 1: # separation with id
-        # TODO update sid_list
-        raise NotImplementedError()
+        sid = in_x[:,0:1,-2:-1]
+        in_x = in_x[:,:,0:-1]
     elif in_x.shape[1]%2 == 1: # combination with id
-        # TODO update sid_list
-        raise NotImplementedError()
+        in_x = in_x[:,0:-1,:]
+        # TODO remove the following GPU to CPU data transfer
+        sid_list = list[np.array(in_x[0,-1,range(0, in_x.shape[-1], 9)])]
     elif in_x.shape[-1]%9 != 0 or in_x.shape[1]%2 != 0: # error
         raise ValueError(f'Invalid input shape: {in_x.shape=}')
 
@@ -324,8 +326,10 @@ def extract_imu_tensor_func_mighar(in_x, version=1):
 
         tags.append(np.array(l))
 
-    return None, None, [x_imu], [tags]
-
+    if sid:
+        return None, None, [x_imu], [tags], sid
+    else:
+        return None, None, [x_imu], [tags]
 
 class Tag:
     UNKNOWN = 0
