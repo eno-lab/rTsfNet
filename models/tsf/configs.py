@@ -315,9 +315,25 @@ def get_config(dataset, lr_magnif=1):
                 'rot_tsf_weight_depth':4, 'rot_tsf_weight_base_kn': 32,
                 }
 
+    elif dataset.startswith('mighar-combination_68_90_108_241'):
+        config = build_base_configs(64, 256)
+        config |= {
+                'depth':2, 'base_kn': 32,
+                'tsf_mixer_depth':2, 'tsf_mixer_base_kn': 64,
+                'block_mixer_depth': 1, 'block_mixer_base_kn': 64,
+                ####################
+                'rot_depth':2, 'rot_base_kn': 128,
+                'rot_tsf_mixer_depth':2, 'rot_tsf_mixer_base_kn': 64,
+                'rot_block_mixer_depth':1, 'rot_block_mixer_base_kn': 64,
+                ###################
+                'ax_weight_depth':1, 'ax_weight_base_kn': 16,
+                'tsf_weight_depth':1, 'tsf_weight_base_kn': 32,
+                'rot_ax_weight_depth':2, 'rot_ax_weight_base_kn': 128,
+                'rot_tsf_weight_depth':1, 'rot_tsf_weight_base_kn': 32,
+                }
+
     elif dataset.startswith('mighar'):
         config = build_base_configs(64, 256)
-
         config |= {
                 'depth':1, 'base_kn': 128,
                 'tsf_mixer_depth':2, 'tsf_mixer_base_kn': 128,
