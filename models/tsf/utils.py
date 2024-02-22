@@ -300,9 +300,9 @@ def extract_imu_tensor_func_mighar(in_x, version=1):
     sensor_num = in_x.shape[-1]//9
     sid_list = list(range(sensor_num))
 
-    sid = None
+    in_x_sid = None
     if in_x.shape[-1]%9 == 1: # separation with id
-        sid = in_x[:,0:1,-2:-1]
+        in_x_sid = in_x[:,0:1,-2:-1]
         in_x = in_x[:,:,0:-1]
     elif in_x.shape[1]%2 == 1: # combination with id
         in_x = in_x[:,0:-1,:]
@@ -326,8 +326,8 @@ def extract_imu_tensor_func_mighar(in_x, version=1):
 
         tags.append(np.array(l))
 
-    if sid:
-        return None, None, [x_imu], [tags], sid
+    if in_x_sid:
+        return None, None, [x_imu], [tags], in_x_sid
     else:
         return None, None, [x_imu], [tags]
 
