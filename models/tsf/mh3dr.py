@@ -157,24 +157,11 @@ class Multihead3dRotation(AbstructLayer):
         if total_c % 3 != 0:
             raise ValueError("input_shape[-1] of x must be a multiple of 3.")
 
-        blk_params = {}
-        blk_count = 0
-        for size, stride, ext_tsf_params in zip(
-                self.tsf_block_sizes, 
-                self.tsf_block_strides, 
-                self.tsf_block_ext_tsf_params, 
-                ):
 
-            if size not in blk_params:
-                blk_params[size] = {}
-
-            if stride not in blk_params[size]:
-                blk_params[size][stride] = []
-
-            blk_params[size][stride].append(ext_tsf_params)
-            blk_count += 1
-
-        self.blk_params = blk_params
+        if not self.concatenate_blocks_with_same_size_and_stride:
+            blk_count = len(self.tsf_block_sizes)
+        else:
+            blk_count = len(self.tsf_block_ext_tsf_params)
 
         
         self.blocked_tsf_mixer_list = [
@@ -196,10 +183,7 @@ class Multihead3dRotation(AbstructLayer):
                     version=self.version,
                     head_num = self.btm_head_num,
                     no_out_activation = self.btm_no_out_activation,
-                    ) for _ in range(blk_count
-                        if not self.concatenate_blocks_with_same_size_and_stride
-                        else len(self.tsf_block_ext_tsf_params)
-                        )]
+                    ) for _ in range(blk_count)]
 
 
         self.rot_param_gen_parallels = []
@@ -269,47 +253,38 @@ class Multihead3dRotation(AbstructLayer):
         x_tags = tags[0]
         extra_x_tags = None if len(tags) == 1 else tags[1]
 
-        if extra_x is not None and extra_x_tags is None:
-            raise ValueError("extra_x_tags must be provided if extra_x is not None.")
+        if ((extra_x is not None and extra_x_tags is None)
+           or (extra_x is None and extra_x_tags is not None)):
+            raise ValueError("Both extra_x and extra_x_tags must be provided.")
 
         x = in_x
         if extra_x is not None:
             x = Concatenate()([x, extra_x])
             x_tags = np.concatenate([x_tags, extra_x_tags])
 
-        x_list = []
         _x_for_ext_tsf = x
 
-        # TODO depth, etc. should be able to set for each block size
-        for size, stride, ext_tsf_params, block_id, blocked_tsf_mixer in zip(
-                self.tsf_block_sizes, 
-                self.tsf_block_strides, 
-                self.tsf_block_ext_tsf_params, 
-                range(1, len(self.tsf_block_sizes)+1),
-                self.blocked_tsf_mixer_list,
-                ):
-            tsf_list = ext_tsf(_x_for_ext_tsf, block_size=size, stride=stride, ext_tsf_params = ext_tsf_params) # [[b f tsf], .. ], len = len/block_size
-
-        blk_params = {}
-        for size, stride, ext_tsf_params in zip(
-                self.tsf_block_sizes, 
-                self.tsf_block_strides, 
-                self.tsf_block_ext_tsf_params, 
-                ):
-
-            if size not in blk_params:
-                blk_params[size] = {}
-
-            if stride not in blk_params[size]:
-                blk_params[size][stride] = []
-
-            blk_params[size][stride].append(ext_tsf_params)
-
+        # extract TSF for each block setup
         tsf_list_list = []
         if self.concatenate_blocks_with_same_size_and_stride:
-            for block_id, blk_size in enumerate(blk_params):
+            # concatenate TSFs of each block position of each block size and stride
+            blk_params = {}
+            for size, stride, ext_tsf_params in zip(
+                    self.tsf_block_sizes, 
+                    self.tsf_block_strides, 
+                    self.tsf_block_ext_tsf_params, 
+                    ):
+
+                if size not in blk_params:
+                    blk_params[size] = {}
+
+                if stride not in blk_params[size]:
+                    blk_params[size][stride] = []
+
+                blk_params[size][stride].append(ext_tsf_params)
+
+            for blk_size in blk_params:
                 for blk_stride in blk_params[blk_size]:
-                    block_id += 1
 
                     _tsf_list = []
                     for ext_tsf_params in blk_params[blk_size][blk_stride]:
@@ -327,10 +302,14 @@ class Multihead3dRotation(AbstructLayer):
                         tsf_list_list.append(tsf_list)
 
         else:
-            for size, stride, ext_tsf_params, block_id in zip(self.tsf_block_sizes, self.tsf_block_strides, self.tsf_block_ext_tsf_params, range(1, len(self.tsf_block_sizes)+1)):
+            # simple
+            for size, stride, ext_tsf_params in zip(self.tsf_block_sizes, self.tsf_block_strides, self.tsf_block_ext_tsf_params):
                 tsf_list_list.append(ext_tsf(_x_for_ext_tsf, block_size=size, stride=stride, ext_tsf_params=ext_tsf_params))# [[b f tsf], .. ], len = len/block_size
 
-        for tsf_list, block_id, blocked_tsf_mixer in zip(tsf_list_list, range(len(tsf_list_list)), self.blocked_tsf_mixer_list):
+
+        x_list = [] # feature after TSF mixer will be stored
+        # handling TSFs
+        for tsf_list, blocked_tsf_mixer in zip(tsf_list_list, self.blocked_tsf_mixer_list):
 
             if len(tsf_list) == 1:
                 x = tf.expand_dims(tsf_list[0], 1)
@@ -346,26 +325,29 @@ class Multihead3dRotation(AbstructLayer):
             x = blocked_tsf_mixer(x)
             x_list.append(x)
 
+        # select aggregation method
         if self.use_add_for_blk_concatenate:
             _x = Add()(x_list) if len(x_list) > 1 else x_list[0]
             _x = self.add_norm_activ(_x)
         else:
             _x = Concatenate(axis=1)(x_list) if len(x_list) > 1 else x_list[0]
 
+        # generate rotation parameters
         rot_params = []
         for rot_param_gen_list in self.rot_param_gen_parallels:
             _rot_params = []
             for i, rot_param_gen in enumerate(rot_param_gen_list):
-                x = _x
-                x = rot_param_gen(x)
+                x = rot_param_gen(_x)
 
                 if i > 0:
                     x = x + _rot_params[-1]
                 _rot_params.append(x)
 
+            # append export points
             for rn in self.rot_out_num:
                 rot_params.append(_rot_params[rn])
 
+        # calc rotated x for each output points
         imu_rotted = [_imu_rot(in_x, param) for param in rot_params]
 
         if self.return_list:
