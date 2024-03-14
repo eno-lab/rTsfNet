@@ -1,6 +1,7 @@
 from .core import r_tsf_net
 from .utils import *
 from .feature import gen_default_ts_feature_params
+import re
 #from sympy import sieve
 
 def get_config(dataset, lr_magnif=1):
@@ -274,6 +275,25 @@ def get_config(dataset, lr_magnif=1):
                 'rot_tsf_weight_depth':3, 'rot_tsf_weight_base_kn': 128,
                 }
 
+    elif dataset.startswith('m_health-combination_0_2_3'): # no ECGs
+
+        config = build_base_configs(32, 128)
+        config |= {
+                ####################
+                'depth':2, 'base_kn': 32,
+                'tsf_mixer_depth':4, 'tsf_mixer_base_kn': 16,
+                'block_mixer_depth': 1, 'block_mixer_base_kn': 64,
+                ####################
+                'rot_depth':3, 'rot_base_kn': 32,
+                'rot_tsf_mixer_depth':4, 'rot_tsf_mixer_base_kn': 16,
+                'rot_block_mixer_depth':1, 'rot_block_mixer_base_kn': 64,
+                ###################
+                'ax_weight_depth':4, 'ax_weight_base_kn': 128,
+                'tsf_weight_depth':3, 'tsf_weight_base_kn': 16,
+                'rot_ax_weight_depth':1, 'rot_ax_weight_base_kn': 64,
+                'rot_tsf_weight_depth':3, 'rot_tsf_weight_base_kn': 16,
+                }
+
     elif dataset.startswith('m_health'):
 
         config = build_base_configs(32, 128)
@@ -315,40 +335,60 @@ def get_config(dataset, lr_magnif=1):
                 'rot_tsf_weight_depth':4, 'rot_tsf_weight_base_kn': 32,
                 }
 
-    elif dataset.startswith('mighar-combination_68_90_108_241'):
-        config = build_base_configs(64, 256)
-        config |= {
-                'depth':2, 'base_kn': 32,
-                'tsf_mixer_depth':2, 'tsf_mixer_base_kn': 64,
-                'block_mixer_depth': 1, 'block_mixer_base_kn': 64,
-                ####################
-                'rot_depth':2, 'rot_base_kn': 128,
-                'rot_tsf_mixer_depth':2, 'rot_tsf_mixer_base_kn': 64,
-                'rot_block_mixer_depth':1, 'rot_block_mixer_base_kn': 64,
-                ###################
-                'ax_weight_depth':1, 'ax_weight_base_kn': 16,
-                'tsf_weight_depth':1, 'tsf_weight_base_kn': 32,
-                'rot_ax_weight_depth':2, 'rot_ax_weight_base_kn': 128,
-                'rot_tsf_weight_depth':1, 'rot_tsf_weight_base_kn': 32,
-                }
-
     elif dataset.startswith('mighar'):
-        config = build_base_configs(64, 256)
-        config |= {
-                'depth':1, 'base_kn': 128,
-                'tsf_mixer_depth':2, 'tsf_mixer_base_kn': 128,
-                'block_mixer_depth': 1, 'block_mixer_base_kn': 128,
-                ####################
-                'rot_depth':3, 'rot_base_kn': 16,
-                'rot_tsf_mixer_depth':2, 'rot_tsf_mixer_base_kn': 128,
-                'rot_block_mixer_depth':1, 'rot_block_mixer_base_kn': 128,
-                ###################
-                'ax_weight_depth':3, 'ax_weight_base_kn': 16,
-                'tsf_weight_depth':3, 'tsf_weight_base_kn': 32,
-                'rot_ax_weight_depth':1, 'rot_ax_weight_base_kn': 16,
-                'rot_tsf_weight_depth':3, 'rot_tsf_weight_base_kn': 32,
-                }
+        config = None
+        if dataset.startswith('mighar-separation') or dataset.startswith('mighar-separation'):
+            opts = dataset.split('-')[1].split('_')
+            if len(opts) >= 2 and re.match('^\d+$', opts[1]) is not None:
+                config = build_base_configs(64, 256)
+                config |= {
+                        'depth':4, 'base_kn': 128,
+                        'tsf_mixer_depth':4, 'tsf_mixer_base_kn': 128,
+                        'block_mixer_depth': 2, 'block_mixer_base_kn': 128,
+                        ####################
+                        'rot_depth':1, 'rot_base_kn': 64,
+                        'rot_tsf_mixer_depth':4, 'rot_tsf_mixer_base_kn': 128,
+                        'rot_block_mixer_depth':2, 'rot_block_mixer_base_kn': 128,
+                        ###################
+                        'ax_weight_depth':1, 'ax_weight_base_kn': 128,
+                        'tsf_weight_depth':4, 'tsf_weight_base_kn': 32,
+                        'rot_ax_weight_depth':4, 'rot_ax_weight_base_kn': 64,
+                        'rot_tsf_weight_depth':4, 'rot_tsf_weight_base_kn': 32,
+                        }
 
+        if dataset.startswith('mighar-combination_68_90_108_241'):
+            config = build_base_configs(64, 256)
+            config |= {
+                    'depth':2, 'base_kn': 32,
+                    'tsf_mixer_depth':2, 'tsf_mixer_base_kn': 64,
+                    'block_mixer_depth': 1, 'block_mixer_base_kn': 64,
+                    ####################
+                    'rot_depth':2, 'rot_base_kn': 128,
+                    'rot_tsf_mixer_depth':2, 'rot_tsf_mixer_base_kn': 64,
+                    'rot_block_mixer_depth':1, 'rot_block_mixer_base_kn': 64,
+                    ###################
+                    'ax_weight_depth':1, 'ax_weight_base_kn': 16,
+                    'tsf_weight_depth':1, 'tsf_weight_base_kn': 32,
+                    'rot_ax_weight_depth':2, 'rot_ax_weight_base_kn': 128,
+                    'rot_tsf_weight_depth':1, 'rot_tsf_weight_base_kn': 32,
+                    }
+
+        elif config is None:
+            config = build_base_configs(64, 256)
+            config |= {
+                    'depth':1, 'base_kn': 128,
+                    'tsf_mixer_depth':2, 'tsf_mixer_base_kn': 128,
+                    'block_mixer_depth': 1, 'block_mixer_base_kn': 128,
+                    ####################
+                    'rot_depth':3, 'rot_base_kn': 16,
+                    'rot_tsf_mixer_depth':2, 'rot_tsf_mixer_base_kn': 128,
+                    'rot_block_mixer_depth':1, 'rot_block_mixer_base_kn': 128,
+                    ###################
+                    'ax_weight_depth':3, 'ax_weight_base_kn': 16,
+                    'tsf_weight_depth':3, 'tsf_weight_base_kn': 32,
+                    'rot_ax_weight_depth':1, 'rot_ax_weight_base_kn': 16,
+                    'rot_tsf_weight_depth':3, 'rot_tsf_weight_base_kn': 32,
+                    }
     else:
         raise NotImplementedError(f"No preconfiged parameters for {dataset}")
 
