@@ -21,9 +21,9 @@ This paper proposes rTsfNet, a DNN model with Multi-head 3D Rotation and Time Se
 
 
 # Best Results and Models
-The best results and trained models of each dataest are available at
+The best results are summarized in IMU-based HAR Benchmark ( https://bit.ly/45OZ1aT )
+The trained models for the best results are available at
 - https://bit.ly/46GWu3L
-.
 
 With the benchmark system, you can run rTsfNet like:
 ```
