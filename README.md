@@ -39,6 +39,19 @@ Simply marge this repository for the benchmark system, then select 'tsf' for the
 IMU-based HAR Benchmark
 - https://bit.ly/45OZ1aT
 
+At least, this source code can work with the above benchmark system and the following packages.
+```
+nvidia-cuda-runtime-cu12  12.2.128                 pypi_0    pypi
+nvidia-cublas-cu12        12.2.4.5                 pypi_0    pypi
+nvidia-cudnn-cu12         8.9.2.26                 pypi_0    pypi
+optuna                    3.2.0                    pypi_0    pypi
+pandas                    2.0.3                    pypi_0    pypi
+python                    3.9.16          h2782a2a_0_cpython    conda-forge
+scikit-learn              1.3.0                    pypi_0    pypi
+tensorboard               2.13.0                   pypi_0    pypi
+tensorflow                2.13.0                   pypi_0    pypi
+```
+
 # Suggestion: How to optimize parameters
 
 The authors recommend the following steps to optimize TSF set and paramters.
