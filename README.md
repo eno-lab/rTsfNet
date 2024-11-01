@@ -39,17 +39,31 @@ Simply marge this repository for the benchmark system, then select 'tsf' for the
 IMU-based HAR Benchmark
 - https://bit.ly/45OZ1aT
 
-At least, this source code can work with the above benchmark system and the following packages.
+At least, this source code can work with the above benchmark system and the following packages. (tf >= 2.16, meaning keras3, is not supported)
 ```
-nvidia-cuda-runtime-cu12  12.2.128                 pypi_0    pypi
-nvidia-cublas-cu12        12.2.4.5                 pypi_0    pypi
-nvidia-cudnn-cu12         8.9.2.26                 pypi_0    pypi
+nvidia-cublas-cu12        12.2.5.6                 pypi_0    pypi
+nvidia-cuda-cupti-cu12    12.2.142                 pypi_0    pypi
+nvidia-cuda-nvcc-cu12     12.2.140                 pypi_0    pypi
+nvidia-cuda-nvrtc-cu12    12.2.140                 pypi_0    pypi
+nvidia-cuda-runtime-cu12  12.2.140                 pypi_0    pypi
+nvidia-cudnn-cu12         8.9.4.25                 pypi_0    pypi
+nvidia-cufft-cu12         11.0.8.103               pypi_0    pypi
+nvidia-curand-cu12        10.3.3.141               pypi_0    pypi
+nvidia-cusolver-cu12      11.5.2.141               pypi_0    pypi
+nvidia-cusparse-cu12      12.1.2.141               pypi_0    pypi
+nvidia-nccl-cu12          2.16.5                   pypi_0    pypi
+nvidia-nvjitlink-cu12     12.2.140                 pypi_0    pypi
 optuna                    3.2.0                    pypi_0    pypi
-pandas                    2.0.3                    pypi_0    pypi
-python                    3.9.16          h2782a2a_0_cpython    conda-forge
-scikit-learn              1.3.0                    pypi_0    pypi
-tensorboard               2.13.0                   pypi_0    pypi
-tensorflow                2.13.0                   pypi_0    pypi
+pandas                    2.2.3                    pypi_0    pypi
+numpy                     1.26.4                   pypi_0    pypi
+python                    3.11.10          hc5c86c4_3_cpython    conda-forge
+tensorflow                2.15.1                   pypi_0    pypi
+```
+An example to build environment with microconda is 
+```
+conda create -n rTsfNet python=3.11
+conda activate rTsfNet
+pip install "tensorflow[and-cuda]==2.15.1" optuna numpy pandas scikit-learn
 ```
 
 # Suggestion: How to optimize parameters
