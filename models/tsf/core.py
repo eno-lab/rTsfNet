@@ -154,7 +154,7 @@ def r_tsf_net(x_shape,
 
                 xx = tf.math.square(_x_imu, _x_imu)
                 xx = Reshape((xx.shape[1], int(xx.shape[2]/3), 3))(xx)
-                _rms = tf.sqrt(tf.reduce_sum(xx, 3))
+                _rms = tf.sqrt(tf.reduce_mean(xx, 3))
 
                 _rms_tag = np.copy(_x_tags[::3,:])
                 _rms_tag[:,2] = Tag.L2
@@ -193,28 +193,11 @@ def r_tsf_net(x_shape,
         x = imu_rotted[0]
         tags = tags[0]
     else:
-        x = Concatenate(axis=2)(imu_rotted) # batch, fatures,  1
+        x = Concatenate(axis=2)(imu_rotted) # batch, time, sensor_axes
         tags = np.concatenate(tags)
 
     if ts_normalize is not None:
         x = ts_normalize(x)
-
-    def gen_weight(x, out_len, depth, base_kn): # batch, block, ch
-        for d in range(depth-1, -1, -1):
-            x = Conv1D(base_kn*(2**d), 1)(x)
-
-            if not few_norm or d == depth -1:
-                x = get_normalizer()(x)
-            if not few_acti or d == 0:
-                x = get_activation()(x)
-            x = Dropout(dropout_rate)(x)
-
-        x = Conv1D(out_len, 1, kernel_regularizer=l2(regularization_rate))(x)
-        #x = get_normalizer()(x)
-        x = Activation("sigmoid")(x)
-        x = Dropout(dropout_rate)(x)
-        return x
-
 
     x_list = []
     _x_for_ext_tsf = x
