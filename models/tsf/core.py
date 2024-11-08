@@ -1,17 +1,16 @@
-from tensorflow.keras import Input
-from tensorflow.keras.layers import Conv1D, Conv2D, Concatenate, Activation, Dense, \
-                                    Flatten, Dropout, LeakyReLU, LayerNormalization,\
-                                    Reshape, Add
-from tensorflow.keras.models import Model, Sequential, load_model
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.regularizers import l2
-import tensorflow as tf
+from keras import Input
+from keras.layers import Conv1D, Conv2D, Concatenate, Activation, Dense, \
+                         Flatten, Dropout, LeakyReLU, LayerNormalization,\
+                         Reshape, Add
+from keras.models import Model, Sequential, load_model
+from keras.optimizers import Adam
+from keras.regularizers import l2
+import keras
 import numpy as np
 
-from .feature import ext_tsf, gen_default_ts_feature_params, BlockedTsfMixer, MultiheadBlockedTsfMixer
+from .feature import ext_tsf, gen_default_ts_feature_params, BlockedTsfMixer, MultiheadBlockedTsfMixer, _sqrt
 from .mh3dr import Multihead3dRotation
 from .utils import Tag
-
 
 __default_ext_tsf_params = gen_default_ts_feature_params()
 
@@ -42,8 +41,8 @@ def r_tsf_net(x_shape,
            rot_block_mixer_base_kn=64,
            rot_tsf_mixer_for_imu_depth=0,
            rot_tsf_mixer_for_imu_base_kn=32,
-           no_rms = False,
-           no_rms_for_rot = False,
+           no_norm = False,
+           no_norm_for_rot = False,
            ax_weight_depth=1,
            ax_weight_base_kn=256,
            tsf_weight_depth=1,
@@ -75,6 +74,7 @@ def r_tsf_net(x_shape,
            use_add_for_blk_concatenate = False,
            btm_no_out_activation = False,
            btm_head_num = 1,
+           rot_kind = 0,
            metrics=['accuracy'],
            do_compile=True):
     """ Requires 3D data: [n_samples, n_timesteps, n_features]"""
@@ -91,19 +91,18 @@ def r_tsf_net(x_shape,
         else:
             return normalizer()
 
+    inputs = Input(x_shape[1:])
+    x = inputs
+
     if tsf_block_sizes is None:
         tsf_block_sizes = [x.shape[1]]
 
     if tsf_block_strides is None:
         tsf_block_strides = tsf_block_sizes
 
-    _input_shape = x_shape[1:]
-
-    inputs = Input(_input_shape)
-    x = inputs
 
     if extract_imu_tensor_func is None: # TODO remove. for keeping the compatibility for old rot_tsf_mlps on main.py
-        extract_imu_tensor_func = extract_imu_tensor_func_pamap2
+        raise NotImplementedError('No extract_imu_tensor_func was set.')
 
     x_sensor_ids = None
     _extracted_features = extract_imu_tensor_func(x, version)
@@ -115,8 +114,8 @@ def r_tsf_net(x_shape,
         raise ValueError("Invalid extracted feature number. Is not it implemented well yet?")
 
     imu_rotted = []
-    imu_rms = []
-    imu_rms_tags = []
+    imu_norm = []
+    imu_norm_tags = []
     tags = []
 
     if imu_rot_num > 0:
@@ -143,38 +142,41 @@ def r_tsf_net(x_shape,
                                         tagging = tagging,
                                         parallel_n = rot_parallel_n,
                                         rot_out_num= rot_out_num,
+                                        regularization_rate=regularization_rate,
                                         version=version,
+                                        rot_kind = rot_kind,
                                         concatenate_blocks_with_same_size_and_stride = concatenate_blocks_with_same_size_and_stride,
                                         use_add_for_blk_concatenate = use_add_for_blk_concatenate,
                                         )
 
             for _x_imu, _x_tags in zip(_x_imu_list, _x_tags_list):
+                _x_tags = keras.ops.convert_to_tensor(_x_tags, dtype=keras.mixed_precision.global_policy().compute_dtype)
+
                 if _x_imu.shape[2] % 3 != 0:
                     raise ValueError(f"{_x_imu.shape[2] % 3 =} should be 0: {_x_imu.shape=}")
 
-                xx = tf.math.square(_x_imu, _x_imu)
-                xx = Reshape((xx.shape[1], int(xx.shape[2]/3), 3))(xx)
-                _rms = tf.sqrt(tf.reduce_sum(xx, 3))
+                xx = keras.ops.power(_x_imu, 2)
+                xx = keras.ops.reshape(xx, (-1, xx.shape[1], xx.shape[2]//3, 3))
+                _norm = _sqrt(keras.ops.sum(xx, 3))
 
-                _rms_tag = np.copy(_x_tags[::3,:])
-                _rms_tag[:,2] = Tag.L2
+                _norm_tag = keras.ops.copy(_x_tags[::3, 0:2])
+                _tmp = keras.ops.add(keras.ops.zeros_like(_x_tags[::3, 2:3]), Tag.L2)
+                _norm_tag = keras.ops.concatenate([_norm_tag, _tmp], axis=-1)
 
-                imu_rms.append(_rms)
-                imu_rms_tags.append(_rms_tag)
+                imu_norm.append(_norm)
+                imu_norm_tags.append(_norm_tag)
 
-                if imu_rot_num > 0:
-
-                    extended_imu = mh3dr([_x_imu,  None if no_rms_for_rot else _rms],
-                                         [_x_tags, None if no_rms_for_rot else _rms_tag])
-                    imu_rotted.extend(extended_imu)
-
-                    for _ in range(len(extended_imu)):
-                        tags.append(_x_tags)
+                extended_imu = mh3dr([_x_imu,  None if no_norm_for_rot else _norm],
+                                     [_x_tags, None if no_norm_for_rot else _norm_tag])
+                imu_rotted.extend(extended_imu)
+                
+                for _ in range(len(extended_imu)):
+                    tags.append(_x_tags)
 
 
-    if not no_rms:
-        imu_rotted.extend(imu_rms)
-        tags.extend(imu_rms_tags)
+    if not no_norm:
+        imu_rotted.extend(imu_norm)
+        tags.extend(imu_norm_tags)
 
     if use_orig_input:
         if version==1:
@@ -193,28 +195,11 @@ def r_tsf_net(x_shape,
         x = imu_rotted[0]
         tags = tags[0]
     else:
-        x = Concatenate(axis=2)(imu_rotted) # batch, fatures,  1
-        tags = np.concatenate(tags)
+        x = keras.ops.concatenate(imu_rotted, axis=2) # batch, time, sensor_axes
+        tags = keras.ops.concatenate(tags)
 
     if ts_normalize is not None:
         x = ts_normalize(x)
-
-    def gen_weight(x, out_len, depth, base_kn): # batch, block, ch
-        for d in range(depth-1, -1, -1):
-            x = Conv1D(base_kn*(2**d), 1)(x)
-
-            if not few_norm or d == depth -1:
-                x = get_normalizer()(x)
-            if not few_acti or d == 0:
-                x = get_activation()(x)
-            x = Dropout(dropout_rate)(x)
-
-        x = Conv1D(out_len, 1, kernel_regularizer=l2(regularization_rate))(x)
-        #x = get_normalizer()(x)
-        x = Activation("sigmoid")(x)
-        x = Dropout(dropout_rate)(x)
-        return x
-
 
     x_list = []
     _x_for_ext_tsf = x
@@ -257,29 +242,29 @@ def r_tsf_net(x_shape,
 
     for tsf_list, block_id in tsf_list_and_blk_id_generator():
         if len(tsf_list) == 1:
-            x = tf.expand_dims(tsf_list[0], 1)
+            x = keras.ops.expand_dims(tsf_list[0], 1)
         else:
-            x = Concatenate(axis=1)([tf.expand_dims(tsf, 1) for tsf in tsf_list])
+            x = keras.ops.concatenate([keras.ops.expand_dims(tsf, 1) for tsf in tsf_list], axis=1)
 
         if tagging:
             #_tags = np.copy(tags) # [axes num, [sensor_location_id, sensor type (e.g., ACC), axis (e.g., X)]]
-            _tags = np.concatenate([tags, np.repeat(block_id, tags.shape[0]).reshape(tags.shape[0], 1)], axis=-1) # add block ids
+            _tags = keras.ops.concatenate([tags, 
+                keras.ops.convert_to_tensor(np.repeat(block_id, tags.shape[0]).reshape(tags.shape[0], 1), dtype=tags.dtype)], axis=-1) # add block ids
 
-            _ones = tf.ones_like(x)
-            while _ones.shape[-1] < _tags.shape[-1]:
-                _ones = tf.concat([_ones, _ones], axis=-1)
-            #tags = tags.reshape((1,) + tags.shape)
-            x = tf.concat([x, _ones[:,:,:,0:_tags.shape[-1]] * _tags.astype('float32')], axis=-1)
+            _ones = keras.ops.ones_like(x)
+            while _ones.shape[-1] < tags.shape[-1]:
+                _ones = keras.ops.concatenate([_ones, _ones], axis=-1)
+            x = keras.ops.concatenate([x, keras.ops.multiply(_ones[:,:,:,0:_tags.shape[-1]], _tags)], axis=-1)
 
             # add sensor ids
             if x_sensor_ids is not None:
                 # the shape of x_sensor_ids: batch, 1, 1
                 assert x_sensor_ids.shape == (x.shape[0], 1, 1)
                 # the shape of x: batch, blocks, sensor_axes, tsf
-                _tmp = tf.expand_dims(x_sensor_ids, 3) # batch, 1, 1, 1
-                _tmp = tf.repeat(_tmp, x.shape[1], axis=1) # batch, blocks, 1, 1
-                _tmp = tf.repeat(_tmp, x.shape[2], axis=2) # batch, blocks, sensor_axes, 1
-                x = tf.concat([x, _tmp], axis=-1)
+                _tmp = keras.ops.expand_dims(x_sensor_ids, 3) # batch, 1, 1, 1
+                _tmp = keras.ops.repeat(_tmp, x.shape[1], axis=1) # batch, blocks, 1, 1
+                _tmp = keras.ops.repeat(_tmp, x.shape[2], axis=2) # batch, blocks, sensor_axes, 1
+                x = keras.ops.concatenate([x, _tmp], axis=-1)
 
         x = MultiheadBlockedTsfMixer(
                 head_num = btm_head_num,
@@ -296,10 +281,11 @@ def r_tsf_net(x_shape,
                 dropout_rate=dropout_rate,
                 few_norm=few_norm,
                 few_acti=few_acti,
+                regularization_rate=regularization_rate,
                 version=version,
                 no_out_activation = btm_no_out_activation,
                 )(x)
-
+        
         x_list.append(x)
 
     if use_add_for_blk_concatenate:
@@ -307,7 +293,7 @@ def r_tsf_net(x_shape,
         x = get_normalizer()(x)
         x = get_activation()(x)
     else:
-        x = Concatenate(axis=1)(x_list) if len(x_list) > 1 else x_list[0]
+        x = keras.ops.concatenate(x_list, axis=1) if len(x_list) > 1 else x_list[0]
 
     x = Flatten()(x)
 
@@ -322,7 +308,7 @@ def r_tsf_net(x_shape,
                 x = Dense(base_kn*(2**d))(x)
 
             x = get_normalizer()(x)
-            x = _x + x
+            x = keras.ops.add(_x, x)
             x = get_activation()(x)
         else:
             if not few_norm or d == depth-1:
@@ -332,6 +318,7 @@ def r_tsf_net(x_shape,
         x = Dropout(dropout_rate)(x)
 
     x = Dense(n_classes, kernel_regularizer=l2(regularization_rate))(x)
+    #x = Dense(n_classes)(x)
     x = Activation(out_activ, dtype='float32')(x)
     m = Model(inputs, x)
 
@@ -339,6 +326,7 @@ def r_tsf_net(x_shape,
         m.compile(loss=out_loss,
                   optimizer=Adam(learning_rate=learning_rate, amsgrad=True),
                   weighted_metrics=metrics)
+    #m.jit_compile=False # With jit, this model become slow, at least with tf2.17.1
 
     return m
 

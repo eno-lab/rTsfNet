@@ -1,6 +1,7 @@
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras.layers import Layer, LayerNormalization, LeakyReLU
+import keras
+from keras.layers import Layer, LayerNormalization, LeakyReLU, Reshape
+from keras.utils import register_keras_serializable
 
 def extract_imu_tensor_func_oppotunity_separation(in_x, version=1):
     imu_feature_num = 3
@@ -51,7 +52,7 @@ def extract_imu_tensor_func_oppotunity(in_x, version=1):
     for i in range(imu_num):
         offset = base_ix + (3*imu_feature_num+1)*i
         x_imu.append(in_x[:,:,(0+offset):(3*imu_feature_num+offset)])
-        x_except_imu.append(tf.expand_dims(in_x[:,:,3*imu_feature_num+offset], 2)) # compus
+        x_except_imu.append(keras.ops.expand_dims(in_x[:,:,3*imu_feature_num+offset], 2)) # compus
         x_tags_except_imu.append(np.array([[sensor_location, Tag.COMPUS, Tag.NONE]]))
 
         l = []
@@ -305,9 +306,9 @@ def extract_imu_tensor_func_mighar(in_x, version=1):
         in_x_sid = in_x[:,0:1,-2:-1]
         in_x = in_x[:,:,0:-1]
     elif in_x.shape[1]%2 == 1: # combination with id
-        in_x = in_x[:,0:-1,:]
         # TODO remove the following GPU to CPU data transfer
         sid_list = list[np.array(in_x[0,-1,range(0, in_x.shape[-1], 9)])]
+        in_x = in_x[:,0:-1,:]
     elif in_x.shape[-1]%9 != 0 or in_x.shape[1]%2 != 0: # error
         raise ValueError(f'Invalid input shape: {in_x.shape=}')
 
@@ -346,7 +347,7 @@ class Tag:
     L2 = 4
 
 
-@tf.keras.saving.register_keras_serializable('tsf')
+@register_keras_serializable('tsf')
 class AbstructLayer(Layer):
 
     def __init__(self, activation_func, normalizer, dropout_rate, version = 1, **kwargs):
@@ -377,7 +378,8 @@ class AbstructLayer(Layer):
             self.layer_count[name] = 0
         else:
             self.layer_count[name] += 1
-        return f'{self.name}/{name}_{self.layer_count[name]}'
+
+        return f'{self.name}_{name}_{self.layer_count[name]}'
 
 
     def get_config(self):
@@ -387,3 +389,13 @@ class AbstructLayer(Layer):
         config.update({'dropout_rate': self.dropout_rate})
         config.update({'version': self.version})
         return config
+
+
+def divide_no_nan(x, y):
+    # x*y/1 -> 0 if elem y ==0, x*y/y/y = x/y if y != 0; 
+    # keep GTape for both x and y on every elements.
+    yy = keras.ops.multiply(y, y)
+    x = keras.ops.multiply(x, y) # keeping GTape for elements related to y == 0
+    w = keras.ops.where(y == 0, 1., yy)
+    x = keras.ops.divide(x, w) 
+    return x

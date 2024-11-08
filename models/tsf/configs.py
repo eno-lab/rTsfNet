@@ -4,7 +4,7 @@ from .feature import gen_default_ts_feature_params
 import re
 #from sympy import sieve
 
-def get_config(dataset, lr_magnif=1):
+def get_config(dataset, lr_magnif=1, tmp_flag1=False):
 
     if dataset == "daphnet":
         extract_imu_tensor_func = extract_imu_tensor_func_daphnet
@@ -36,6 +36,7 @@ def get_config(dataset, lr_magnif=1):
 
     def build_base_configs(short_win, long_win):
         ext_tsf_params = {}
+        #ext_tsf_params['mean'] = True
         ext_tsf_params['rms'] = True
         ext_tsf_params['abs_energy'] = True
         ext_tsf_params['abs_sum_of_changes'] = True
@@ -48,9 +49,9 @@ def get_config(dataset, lr_magnif=1):
         ext_tsf_params['mean_change'] = True
         ext_tsf_params['fft_amp_agg_skew'] = True
         ext_tsf_params['fft_amp_ratio_agg_mean'] = True
-
         ext_tsf_params['autocorralation_mean'] = True
-        ext_tsf_params['autocorralation_kurt'] = True
+        if tmp_flag1:
+            ext_tsf_params['autocorralation_kurt'] = True # これ動いてなかった??
 
         ext_tsf_params_long= ext_tsf_params.copy()
 
@@ -64,12 +65,22 @@ def get_config(dataset, lr_magnif=1):
             ext_p['autocorralation'] = np.arange(1, win_len//2, step=1)
 
         config = {
-                'learning_rate': 0.001 * lr_magnif,
-                'regularization_rate': 0.00001,
+                'rot_kind': 2,
+                'learning_rate': 0.0001 * lr_magnif,
+                'regularization_rate': 1e-5,
                 'extract_imu_tensor_func': extract_imu_tensor_func,
                 'use_orig_input': False,
-                'no_rms_for_rot': False,
-                'dropout_rate': 0.5,
+                'no_norm_for_rot': False,
+                #'dropout_rate': 0.5,  # NG, something of dropout may be changed from Keras3
+                #'dropout_rate': 0.45, # NG 
+                #'dropout_rate': 0.35, # NG
+                #'dropout_rate': 0.34, # NG
+                #'dropout_rate': 0.333, # OK, but boder?
+                'dropout_rate': 0.33, # OK, best?
+                #'dropout_rate': 0.325, OK
+                #'dropout_rate': 0.3, OK
+                #'dropout_rate': 0.29, # OK
+                #'dropout_rate': 0.25, # well?
                 ####################
                 'depth':2, 'base_kn': 32,
                 'tsf_mixer_depth':1, 'tsf_mixer_base_kn': 32,
@@ -337,9 +348,9 @@ def get_config(dataset, lr_magnif=1):
 
     elif dataset.startswith('mighar'):
         config = None
-        if dataset.startswith('mighar-separation') or dataset.startswith('mighar-separation'):
+        if dataset.startswith('mighar-separation'):
             opts = dataset.split('-')[1].split('_')
-            if len(opts) >= 2 and re.match('^\d+$', opts[1]) is not None:
+            if len(opts) >= 2 and re.match('^\d+$', opts[1]) is not None: # at least one sensor is specified.
                 config = build_base_configs(64, 256)
                 config |= {
                         'depth':4, 'base_kn': 128,
@@ -451,42 +462,54 @@ def get_optim_config(dataset, trial, lr_magnif=1):
     #######################################################
     # param selection
     #######################################################
-        base_kn = 32*2**trial.suggest_int('base_kn', low=-1, high=2)
-        depth = trial.suggest_int('depth', low=1, high=4)
-        rot_base_kn = 32*2**trial.suggest_int('rot_base_kn', low=-1, high=2)
-        rot_depth = trial.suggest_int('rot_depth', low=1, high=4)
+        #lr_list = [0.5, 0.1, 0.05, 0.01, 0.005, 0.001, 0.0005, 0.0001]
+        lr_list = [0.001, 0.00075, 0.0005, 0.00025, 0.0001, 0.000075, 0.00005, 0.000025, 0.00001]
+        dropout_rate = [0.2, 0.25, 0.33]
+        use_ac_kurt = bool(trial.suggest_categorical('use_ac_kurt', [0, 1]))
+        
+        config = get_config(dataset, lr_magnif, tmp_flag1=use_ac_kurt)
 
-        tsf_mixer_base_kn = 32*2**trial.suggest_int('tsf_mixer_base_kn', low=-1, high=2)
-        tsf_mixer_depth = trial.suggest_int('tsf_mixer_depth', low=1, high=4)
-        block_mixer_base_kn = 32*2**trial.suggest_int('block_mixer_base_kn', low=-1, high=2)
-        block_mixer_depth= trial.suggest_int('block_mixer_depth', low=1, high=4)
-        ax_weight_base_kn = 32*2**trial.suggest_int('ax_weight_base_kn', low=-1, high=2)
-        ax_weight_depth = trial.suggest_int('ax_weight_depth', low=1, high=4)
-        rot_ax_weight_base_kn = 32*2**trial.suggest_int('rot_ax_weight_base_kn', low=-1, high=2)
-        rot_ax_weight_depth = trial.suggest_int('rot_ax_weight_depth', low=1, high=4)
-        tsf_weight_base_kn = 32*2**trial.suggest_int('tsf_weight_base_kn', low=-1, high=2)
-        tsf_weight_depth = trial.suggest_int('tsf_weight_depth', low=1, high=4)
+        config['learning_rate'] = lr_list[trial.suggest_int('lr', low=0, high=len(lr_list)-1)]
+        config['rot_kind'] = trial.suggest_categorical('rot_kind', [0, 1, 2, 3, 4, 5, 6])
+        #config['regularization_rate'] = 1/(10**trial.suggest_int('rr', low=1, high=8))
+        config['regularization_rate'] = 1/(10**trial.suggest_int('rr', low=3, high=8))
+        config['dropout_rate'] = dropout_rate[trial.suggest_int('dropout_rate', low=0, high=len(dropout_rate)-1)]
+        # base_kn = 32*2**trial.suggest_int('base_kn', low=-1, high=2)
+        # depth = trial.suggest_int('depth', low=1, high=4)
+        # rot_base_kn = 32*2**trial.suggest_int('rot_base_kn', low=-1, high=2)
+        # rot_depth = trial.suggest_int('rot_depth', low=1, high=4)
 
-        config['base_kn'] = base_kn
-        config['depth'] = depth
-        config['tsf_mixer_base_kn'] = tsf_mixer_base_kn
-        config['tsf_mixer_depth'] = tsf_mixer_depth
-        config['block_mixer_base_kn'] = block_mixer_base_kn
-        config['block_mixer_depth'] = block_mixer_depth
-        config['rot_base_kn'] = rot_base_kn
-        config['rot_depth'] = rot_depth
-        config['rot_tsf_mixer_base_kn'] = tsf_mixer_base_kn
-        config['rot_tsf_mixer_depth'] = tsf_mixer_depth
-        config['rot_block_mixer_base_kn'] = block_mixer_base_kn
-        config['rot_block_mixer_depth'] = block_mixer_depth
-        config['ax_weight_base_kn'] = ax_weight_base_kn
-        config['ax_weight_depth'] = ax_weight_depth
-        config['rot_ax_weight_base_kn'] = rot_ax_weight_base_kn
-        config['rot_ax_weight_depth'] = rot_ax_weight_depth
-        config['tsf_weight_base_kn'] = tsf_weight_base_kn
-        config['tsf_weight_depth'] = tsf_weight_depth
-        config['rot_tsf_weight_base_kn'] = tsf_weight_base_kn
-        config['rot_tsf_weight_depth'] = tsf_weight_depth
+        # tsf_mixer_base_kn = 32*2**trial.suggest_int('tsf_mixer_base_kn', low=-1, high=2)
+        # tsf_mixer_depth = trial.suggest_int('tsf_mixer_depth', low=1, high=4)
+        # block_mixer_base_kn = 32*2**trial.suggest_int('block_mixer_base_kn', low=-1, high=2)
+        # block_mixer_depth= trial.suggest_int('block_mixer_depth', low=1, high=4)
+        # ax_weight_base_kn = 32*2**trial.suggest_int('ax_weight_base_kn', low=-1, high=2)
+        # ax_weight_depth = trial.suggest_int('ax_weight_depth', low=1, high=4)
+        # rot_ax_weight_base_kn = 32*2**trial.suggest_int('rot_ax_weight_base_kn', low=-1, high=2)
+        # rot_ax_weight_depth = trial.suggest_int('rot_ax_weight_depth', low=1, high=4)
+        # tsf_weight_base_kn = 32*2**trial.suggest_int('tsf_weight_base_kn', low=-1, high=2)
+        # tsf_weight_depth = trial.suggest_int('tsf_weight_depth', low=1, high=4)
+
+        # config['base_kn'] = base_kn
+        # config['depth'] = depth
+        # config['tsf_mixer_base_kn'] = tsf_mixer_base_kn
+        # config['tsf_mixer_depth'] = tsf_mixer_depth
+        # config['block_mixer_base_kn'] = block_mixer_base_kn
+        # config['block_mixer_depth'] = block_mixer_depth
+        # config['rot_base_kn'] = rot_base_kn
+        # config['rot_depth'] = rot_depth
+        # config['rot_tsf_mixer_base_kn'] = tsf_mixer_base_kn
+        # config['rot_tsf_mixer_depth'] = tsf_mixer_depth
+        # config['rot_block_mixer_base_kn'] = block_mixer_base_kn
+        # config['rot_block_mixer_depth'] = block_mixer_depth
+        # config['ax_weight_base_kn'] = ax_weight_base_kn
+        # config['ax_weight_depth'] = ax_weight_depth
+        # config['rot_ax_weight_base_kn'] = rot_ax_weight_base_kn
+        # config['rot_ax_weight_depth'] = rot_ax_weight_depth
+        # config['tsf_weight_base_kn'] = tsf_weight_base_kn
+        # config['tsf_weight_depth'] = tsf_weight_depth
+        # config['rot_tsf_weight_base_kn'] = tsf_weight_base_kn
+        # config['rot_tsf_weight_depth'] = tsf_weight_depth
     #######################################################
 
     return config
