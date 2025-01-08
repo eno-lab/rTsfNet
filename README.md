@@ -1,24 +1,26 @@
-# rTsfNet
+![image](https://github.com/user-attachments/assets/1e3aba26-6b60-4b34-9f35-9ef7ec4a023e)![image](https://github.com/user-attachments/assets/4b2cb2df-e740-469a-b074-13dbabdcc498)# rTsfNet
 
 It is a reference implementation of rTsfNet: multi-head rotation and time series feature net.
 
 # LICENSE
-Use of rTsfNet in publications must be acknowledged by referencing the following publication. 
+Use of rTsfNet in publications must be acknowledged by referencing the following publication. (Updated 2025/01/08)
 
-- Yu Enokibori. 2023. rTsfNet: a DNN model with Multi-head 3D Rotation and Time Series Feature Extraction for IMU-based Human Activity Recognition. arXiv:2310.19283 [cs.HC]
-- https://doi.org/10.48550/arXiv.2310.19283
+- Yu Enokibori. 2024. rTsfNet: a DNN Model with Multi-head 3D Rotation and Time Series Feature Extraction for IMU-based Human Activity Recognition. Proc. ACM Interact. Mob. Wearable Ubiquitous Technol. 8, 4, Article 202 (December 2024), 26 pages
+- https://doi.org/10.1145/3699733
 
-## NOTE
-The DOI and citation text will be updated for formal one. So, please check here before you make a submission.
+- ~Yu Enokibori. 2023. rTsfNet: a DNN model with Multi-head 3D Rotation and Time Series Feature Extraction for IMU-based Human Activity Recognition. arXiv:2310.19283 [cs.HC]~
+- ~https://doi.org/10.48550/arXiv.2310.19283~
+
+~## NOTE~
+~The DOI and citation text will be updated for a formal one. So, please check here before you make a submission.~
 
 ## Paper info. 
 ### Title
-rTsfNet: a DNN model with Multi-head 3D Rotation and Time Series Feature Extraction for IMU-based Human Activity Recognition
+rTsfNet: A DNN Model with Multi-head 3D Rotation and Time Series Feature Extraction for IMU-based Human Activity Recognition
 ### Authors
 Yu Enokibori, Nagoya University, Japan
 ### Abstruct
-This paper proposes rTsfNet, a DNN model with Multi-head 3D Rotation and Time Series Feature Extraction, as a new DNN model for IMU-based human activity recognition (HAR). rTsfNet automatically selects 3D bases from which features should be derived by deriving 3D rotation parameters within the DNN. Then, time series features (TSFs), the wisdom of many researchers, are derived and realize HAR using MLP. Although a model that does not use CNN, it achieved the highest accuracy than existing models under well-managed benchmark conditions and multiple datasets: UCI HAR, PAMAP2, Daphnet, and OPPORTUNITY, which target different activities.
-
+Many deep learning (DL) models have been proposed for the IMU (inertial measurement unit) based HAR (human activity recognition) domain. However, combinations of manually designed time series features (TSFs) and traditional machine learning (ML) often continue to perform well. It is not rare that combinations among TSFs and DL show better performance than the DL-only approaches. Those facts mean that TSFs have the potential to outperform automatically generated features using deep neural networks (DNNs). However, TSFs have a problem: their performances are only good if appropriate 3D bases are selected. Fortunately, DL's strengths include capturing the features of input data and adaptively deriving parameters automatically. Thus, as a new DNN model for an IMU-based HAR, this paper proposes rTsfNet, a DNN model with Multi-head 3D Rotation and Time Series Feature Extraction. rTsfNet automatically selects multiple 3D bases from which features should be derived by extracting 3D rotation parameters within the DNN. Then, TSFs are derived to achieve HAR results using multilayer perceptrons (MLPs). With this combination, rTsfNet showed higher performance than existing models under well-managed benchmark conditions and multiple datasets: UCI HAR, PAMAP2, Daphnet, and OPPORTUNITY, all of which target different activities.
 
 # Best Results and Models
 The best results are summarized in IMU-based HAR Benchmark ( https://bit.ly/45OZ1aT )
