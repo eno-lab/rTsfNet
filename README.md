@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/1e3aba26-6b60-4b34-9f35-9ef7ec4a023e)![image](https://github.com/user-attachments/assets/4b2cb2df-e740-469a-b074-13dbabdcc498)# rTsfNet
+# rTsfNet
 
 It is a reference implementation of rTsfNet: multi-head rotation and time series feature net.
 
